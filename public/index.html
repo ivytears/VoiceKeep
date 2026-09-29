@@ -1,0 +1,1899 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <title>留声</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Ink-on-paper palette — warm, editorial */
+      --bg: #f8f6f2;
+      --bg-secondary: #f0ede7;
+      --card: #fffef9;
+      --card-hover: #f5f2ec;
+      --border: #e2ddd4;
+      --border-subtle: #ebe7e0;
+
+      /* Text — warm ink tones, NOT pure black */
+      --text: #2c2520;
+      --text-secondary: #6b5f54;
+      --muted: #9c8f82;
+
+      /* Primary accent — deep warm coral, NOT teal/indigo */
+      --accent: #c05d3b;
+      --accent-hover: #a84e30;
+      --accent-light: rgba(192, 93, 59, 0.07);
+      --accent-glow: rgba(192, 93, 59, 0.2);
+      --border-focus: #c05d3b;
+
+      /* Semantic */
+      --green: #4a8c6f;
+      --green-light: #eef6f1;
+      --red: #c44040;
+      --red-light: #fdf0f0;
+      --record-red: #d04040;
+      --record-glow: rgba(208, 64, 64, 0.3);
+
+      /* Legacy aliases (JS compatibility) */
+      --blue: var(--accent);
+      --blue-light: var(--accent-light);
+      --green-surface: var(--accent-light);
+      --cyan: var(--accent);
+      --lime: var(--accent);
+
+      /* Motion — exponential easing for natural deceleration */
+      --duration-fast: 120ms;
+      --duration-default: 200ms;
+      --duration-slow: 320ms;
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+      --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+    :focus:not(:focus-visible) { outline: none; }
+    * { touch-action: manipulation; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+
+    body {
+      font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .layout { display: flex; height: 100vh; }
+
+    /* ────── Sidebar ────── */
+    .sidebar {
+      width: 260px; background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; flex-shrink: 0;
+    }
+    .sidebar-header { padding: 20px 20px 16px; }
+    .sidebar-header h2 {
+      font-family: "Noto Serif SC", "Songti SC", serif;
+      font-size: 15px; font-weight: 600; letter-spacing: 0.04em;
+      color: var(--text);
+    }
+    .sidebar-header p { font-size: 12px; color: var(--muted); margin-top: 2px; letter-spacing: 0.02em; }
+    .history-list { flex: 1; overflow-y: auto; padding: 8px; }
+    .history-item {
+      padding: 10px 12px; border-radius: 6px; cursor: pointer;
+      margin-bottom: 2px; position: relative;
+      transition: background var(--duration-fast) var(--ease-out);
+    }
+    .history-item:hover { background: var(--accent-light); }
+    .history-item.active { background: var(--accent-light); }
+    .history-item .name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 24px; }
+    .history-item .meta { font-size: 11px; color: var(--muted); margin-top: 3px; display: flex; gap: 8px; letter-spacing: 0.02em; }
+    .history-item.active .meta { color: var(--text-secondary); }
+    .history-item .delete-btn {
+      position: absolute; top: 50%; right: 4px; transform: translateY(-50%);
+      width: 32px; height: 32px; border: none; border-radius: 6px;
+      background: transparent; color: var(--muted); font-size: 14px;
+      cursor: pointer; display: none; align-items: center; justify-content: center;
+      transition: background var(--duration-fast) var(--ease-out);
+    }
+    .history-item:hover .delete-btn { display: flex; }
+    .history-item .delete-btn:hover { background: var(--red); color: #fffef9; }
+    .clear-all-btn {
+      background: none; border: 1px solid var(--border); color: var(--muted); font-size: 12px;
+      cursor: pointer; padding: 8px 12px; margin: 8px 20px 0; border-radius: 6px;
+      min-height: 36px; letter-spacing: 0.02em;
+      transition: color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+    }
+    .clear-all-btn:hover { color: var(--red); border-color: var(--red); }
+    .history-empty { padding: 32px 20px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.7; }
+
+    /* ────── Header ────── */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .header {
+      padding: 12px 28px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
+    .header h1 {
+      font-family: "Noto Serif SC", "Songti SC", serif;
+      font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: 0.02em;
+    }
+    .header-badge {
+      background: var(--bg-secondary); color: var(--muted);
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 11px; font-weight: 500; letter-spacing: 0.04em;
+      border: 1px solid var(--border);
+    }
+
+    /* ────── Footer ────── */
+    .tech-footer {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(248,246,242,0.85);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border-subtle);
+      padding: 6px 16px calc(6px + env(safe-area-inset-bottom, 0px));
+      display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+      font-size: 10px; color: var(--muted); z-index: 5; letter-spacing: 0.03em;
+    }
+    .tech-footer span { display: inline-flex; align-items: center; gap: 3px; }
+    .tech-footer .tech-label { font-weight: 500; color: var(--text-secondary); }
+    .content { flex: 1; overflow-y: auto; padding: 32px; }
+
+    /* ────── Landing ────── */
+    .landing { max-width: 440px; margin: 0 auto; text-align: center; position: relative; padding-top: 18vh; }
+    .landing-blobs { display: none; }
+    .mic-wrap { margin-bottom: 20px; position: relative; z-index: 1; }
+
+    /* ────── Mic Button — the soul ────── */
+    .mic-btn {
+      width: 112px; height: 112px; border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: #fffef9; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      box-shadow:
+        0 2px 4px rgba(44,37,32,0.08),
+        0 12px 40px var(--accent-glow);
+      transition: transform var(--duration-fast) var(--ease-out),
+                  box-shadow var(--duration-default) var(--ease-out);
+      position: relative;
+      animation: mic-breathe 4s ease-in-out infinite;
+    }
+    @keyframes mic-breathe {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 2px 4px rgba(44,37,32,0.08), 0 12px 40px rgba(192,93,59,0.12);
+      }
+      50% {
+        transform: scale(1.08);
+        box-shadow: 0 6px 12px rgba(44,37,32,0.05), 0 24px 72px rgba(192,93,59,0.38);
+      }
+    }
+    .mic-btn:hover {
+      transform: scale(1.06);
+      box-shadow:
+        0 2px 4px rgba(44,37,32,0.08),
+        0 16px 52px rgba(192,93,59,0.32);
+      animation: none;
+    }
+    .mic-btn:active { transform: scale(0.96); animation: none; }
+    .mic-btn.recording { background: var(--record-red); animation: none; }
+    .mic-btn.recording::after {
+      content: '';
+      position: absolute; inset: -2px; border-radius: 50%;
+      background: var(--record-glow);
+      animation: pulse-ring 2s ease-in-out infinite;
+    }
+    .mic-btn svg { width: 48px; height: 48px; fill: currentColor; }
+    @keyframes pulse-ring {
+      0%   { transform: scale(1);    opacity: 0.7; }
+      70%  { transform: scale(1.5);  opacity: 0; }
+      100% { transform: scale(1.5);  opacity: 0; }
+    }
+
+    .mic-label {
+      font-family: "Noto Serif SC", "Songti SC", serif;
+      font-size: 20px; font-weight: 600; color: var(--text);
+      margin-top: 20px; letter-spacing: 0.01em;
+    }
+    .mic-hint { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.6; opacity: 0.7; }
+    .slogan {
+      font-family: "Noto Serif SC", "Songti SC", serif;
+      font-size: 14px; font-weight: 400; letter-spacing: 0.2em;
+      color: var(--muted); margin-bottom: 32px; opacity: 0.7;
+    }
+    .record-timer {
+      font-size: 36px; font-weight: 600; color: var(--record-red);
+      margin: 12px 0 4px; font-variant-numeric: tabular-nums; letter-spacing: 2px;
+    }
+
+    /* ────── Divider ────── */
+    .divider {
+      display: flex; align-items: center; gap: 16px;
+      margin: 24px 0 16px; color: var(--muted); font-size: 11px; letter-spacing: 0.04em;
+      opacity: 0.5;
+    }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ────── Upload ────── */
+    .upload-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 24px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--card); color: var(--text-secondary); font-size: 14px;
+      cursor: pointer;
+      transition: border-color var(--duration-default) var(--ease-out),
+                  color var(--duration-default) var(--ease-out);
+    }
+    .upload-link:hover { border-color: var(--accent); color: var(--accent); }
+    .upload-link:active { transform: scale(0.98); }
+    .upload-link svg { width: 16px; height: 16px; fill: currentColor; }
+
+    /* Voice Memo Guide (iPhone) */
+    .voice-memo-guide { margin-top: 20px; }
+    .vm-flow { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .vm-flow-item {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; text-align: center;
+      flex: 1; max-width: 150px;
+    }
+    .vm-flow-item.active {
+      border-color: var(--accent); background: var(--accent-light);
+    }
+    .vm-flow-icon { font-size: 28px; margin-bottom: 6px; }
+    .vm-flow-text { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.4; }
+    .vm-flow-text span { font-weight: 400; color: var(--muted); font-size: 11px; }
+    .vm-flow-arrow { font-size: 20px; color: var(--accent); font-weight: 700; flex-shrink: 0; }
+
+    .drag-overlay {
+      display: none; position: fixed; inset: 0; z-index: 100;
+      background: rgba(192,93,59,0.04); border: 2px dashed var(--accent);
+      border-radius: 16px; margin: 20px;
+      justify-content: center; align-items: center;
+      font-size: 17px; font-weight: 600; color: var(--accent);
+    }
+    .drag-overlay.show { display: flex; }
+
+    input[type="file"] { display: none; }
+
+    /* ────── Modal ────── */
+    .modal-overlay { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(44,37,32,0.4); justify-content: center; align-items: center; }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--card); border-radius: 14px; padding: 32px;
+      max-width: 380px; width: 90%; text-align: center;
+      box-shadow: 0 24px 80px rgba(44,37,32,0.2);
+    }
+    .modal-icon { font-size: 48px; margin-bottom: 16px; }
+    .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.01em; }
+    .modal-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 24px; }
+    .modal-btn {
+      display: block; width: 100%; padding: 13px; border: none; border-radius: 8px;
+      font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 8px;
+      transition: background var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+    }
+    .modal-btn:active { transform: scale(0.98); }
+    .modal-btn.primary { background: var(--accent); color: #fffef9; }
+    .modal-btn.primary:hover { background: var(--accent-hover); }
+    .modal-btn.secondary { background: var(--bg-secondary); color: var(--text); }
+    .modal-btn.secondary:hover { background: var(--border); }
+
+    /* ────── Progress ────── */
+    .progress-area { max-width: 520px; margin: 48px auto; display: none; }
+    .progress-area.show { display: block; }
+    .progress-file { font-size: 14px; font-weight: 500; margin-bottom: 16px; color: var(--text-secondary); }
+    .progress-bar-wrap { background: var(--border); border-radius: 4px; height: 4px; overflow: visible; margin-bottom: 32px; position: relative; }
+    .progress-bar {
+      height: 100%; border-radius: 4px; width: 0%;
+      background: var(--accent);
+      transition: width 0.8s var(--ease-in-out);
+      position: relative;
+    }
+    .progress-bar.done { background: var(--green); }
+
+    .walker { position: absolute; top: -26px; right: -10px; font-size: 20px; transition: right 0.3s var(--ease-out); filter: drop-shadow(0 1px 2px rgba(44,37,32,0.15)); }
+
+    .witty-msg { text-align: center; margin-top: 24px; font-size: 14px; color: var(--muted); min-height: 22px; }
+
+    .progress-steps { display: flex; flex-direction: column; gap: 8px; }
+    .step { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); }
+    .step.active { color: var(--accent); }
+    .step.done { color: var(--green); }
+    .step.error { color: var(--red); }
+    .step-icon { width: 18px; text-align: center; font-size: 14px; flex-shrink: 0; }
+    .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--accent); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ────── Results ────── */
+    .results { display: none; max-width: 760px; margin: 0 auto; }
+    .results.show { display: block; }
+
+    .results-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .toolbar-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 18px; border-radius: 6px; font-size: 13px; font-weight: 500;
+      cursor: pointer; border: 1px solid var(--border); background: var(--card);
+      color: var(--text); letter-spacing: 0.02em;
+      transition: border-color var(--duration-fast) var(--ease-out),
+                  color var(--duration-fast) var(--ease-out),
+                  background var(--duration-fast) var(--ease-out);
+    }
+    .toolbar-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .toolbar-btn:active { transform: scale(0.98); }
+    .toolbar-btn.primary { background: var(--accent); color: #fffef9; border-color: var(--accent); }
+    .toolbar-btn.primary:hover { background: var(--accent-hover); }
+    .toolbar-btn.copied { background: var(--green); color: #fffef9; border-color: var(--green); }
+    .toolbar-btn svg { width: 15px; height: 15px; fill: currentColor; }
+    .toolbar-spacer { flex: 1; }
+
+    .result-stats { display: flex; gap: 12px; margin-bottom: 16px; font-size: 12px; color: var(--muted); letter-spacing: 0.02em; }
+    .result-stats span { background: var(--bg-secondary); padding: 4px 12px; border-radius: 4px; }
+
+    /* Tab switcher */
+    .tab-bar {
+      display: inline-flex; gap: 0; margin-bottom: 20px;
+      border-bottom: 1px solid var(--border); padding: 0;
+      background: transparent; border-radius: 0;
+    }
+    .tab-btn {
+      padding: 10px 20px; text-align: center; font-size: 14px; font-weight: 500;
+      border: none; background: transparent; cursor: pointer;
+      color: var(--muted); letter-spacing: 0.02em;
+      border-bottom: 2px solid transparent; margin-bottom: -1px; border-radius: 0;
+      transition: color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: transparent; box-shadow: none; }
+
+    /* Minutes editor */
+    .minutes-editor {
+      background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+      padding: 28px; min-height: 360px; max-height: 60vh; overflow-y: auto;
+      font-size: 15px; line-height: 1.85; white-space: pre-wrap; word-break: break-word;
+      outline: none;
+      transition: border-color var(--duration-default) var(--ease-out), box-shadow var(--duration-default) var(--ease-out);
+    }
+    .minutes-editor:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+    .minutes-editor.streaming { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+
+    /* Transcript viewer */
+    .transcript-panel { display: none; }
+    .transcript-panel.show { display: block; }
+    /* 个人版（/api/config 的 transcriptOnly）：只出原文——收起纪要相关的界面，原始转录直接显示 */
+    body.transcript-only #copyMinutesBtn,
+    body.transcript-only #editToggleBtn,
+    body.transcript-only #regenerateBtn,
+    body.transcript-only .tab-bar,
+    body.transcript-only #minutesPanel,
+    body.transcript-only .tech-llm { display: none !important; }
+    body.transcript-only .transcript-panel { display: block; }
+    .transcript-content {
+      background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+      padding: 28px; max-height: 60vh; overflow-y: auto;
+      font-size: 14px; line-height: 1.85; white-space: pre-wrap; word-break: break-word;
+      color: var(--text-secondary);
+    }
+    .transcript-toggle { display: flex; gap: 6px; }
+    .seg-btn {
+      padding: 5px 14px; font-size: 13px; cursor: pointer;
+      background: var(--card); color: var(--text-secondary);
+      border: 1px solid var(--border); border-radius: 999px;
+      transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+    }
+    .seg-btn:hover { color: var(--text); }
+    .seg-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .save-hint {
+      text-align: center; margin-top: 12px; font-size: 12px; color: var(--muted);
+      opacity: 0; transition: opacity 0.3s var(--ease-out); letter-spacing: 0.02em;
+    }
+    .save-hint.show { opacity: 1; }
+
+    /* ────── Responsive ────── */
+    .mobile-menu-btn {
+      display: none; background: none; border: none; font-size: 20px;
+      cursor: pointer; padding: 4px 8px; color: var(--text);
+    }
+    @media (max-width: 768px) {
+      .sidebar { display: none; position: fixed; left: 0; top: 0; bottom: 0; z-index: 300; width: 280px; box-shadow: 4px 0 24px rgba(44,37,32,0.15); }
+      .sidebar.open { display: flex; }
+      .sidebar-overlay { display: none; position: fixed; inset: 0; z-index: 299; background: rgba(44,37,32,0.3); }
+      .sidebar-overlay.show { display: block; }
+      .mobile-menu-btn { display: block; }
+      .history-item .delete-btn { display: flex; }
+      .content { padding: 20px 16px 0; }
+      .landing { padding-top: 12vh; }
+      .results-toolbar { gap: 6px; }
+      .toolbar-btn { padding: 8px 12px; font-size: 12px; }
+      .tech-footer {
+        gap: 8px;
+        padding: 5px 12px calc(5px + env(safe-area-inset-bottom, 0px));
+        font-size: 9px;
+      }
+    }
+
+    /* ────── Recording state: fade out non-essential elements ────── */
+    .landing.is-recording .slogan,
+    .landing.is-recording .divider,
+    .landing.is-recording .upload-link,
+    .landing.is-recording .voice-memo-guide,
+    .landing.is-recording .mic-hint:not(#liveStatus) {
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+      transition: opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out);
+    }
+    .landing.is-recording .mic-label {
+      opacity: 0.5;
+      transition: opacity 0.5s var(--ease-out);
+    }
+
+    /* ────── Page load animation ────── */
+    @keyframes landingReveal {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .landing { animation: landingReveal 0.6s var(--ease-out) both; }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+  <aside class="sidebar" id="sidebar" aria-label="历史记录">
+    <div class="sidebar-header">
+      <h2>历史记录</h2>
+      <p id="historyHint">点击查看之前的纪要</p>
+      <button class="clear-all-btn" id="clearAllBtn" onclick="clearAllHistory()" style="display:none">清除全部</button>
+    </div>
+    <div class="history-list" id="historyList">
+      <div class="history-empty">暂无记录</div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="header">
+      <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="打开历史记录" aria-expanded="false" id="menuBtn">☰</button>
+      <h1>留声</h1>
+      <span class="header-badge" id="headerBadge">本地转录 · 数据不出公司</span>
+    </div>
+
+    <div class="content">
+      <!-- Upload / Record Section -->
+      <div id="uploadSection">
+        <div class="landing">
+          <div class="landing-blobs">
+            <div class="blob blob-1"></div>
+            <div class="blob blob-2"></div>
+            <div class="blob blob-3"></div>
+          </div>
+          <div class="slogan">开完会，话还在</div>
+          <div class="mic-wrap">
+            <button class="mic-btn" id="recordBtn" onclick="toggleRecording()" aria-label="点击开始录音">
+              <svg viewBox="0 0 24 24" id="micIcon"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+            </button>
+          </div>
+          <div class="mic-label" id="recordLabel">开始录音</div>
+          <div class="record-timer" id="recordTimer" style="display:none">00:00:00</div>
+          <div class="mic-hint" id="recordHint">录完自动生成纪要</div>
+          <div class="mic-hint" id="liveStatus" style="display:none; margin-top:8px; color:var(--green); font-weight:500;">
+            <span id="liveChunkCount">0</span> 段已转录 · <span id="liveCharCount">0</span> 字
+          </div>
+
+          <div class="divider">或</div>
+
+          <div class="upload-link" id="dropZone" role="button" tabindex="0" aria-label="选择录音文件上传">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zm-3-7v4H9v-4H6l6-6 6 6h-3z"/></svg>
+            <span id="uploadLabel">上传录音文件</span>
+          </div>
+          <!-- iPhone 语音备忘录引导 -->
+          <div class="voice-memo-guide" id="voiceMemoGuide" style="display:none;">
+            <div class="vm-flow">
+              <div class="vm-flow-item">
+                <div class="vm-flow-icon">
+                  <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                    <rect width="40" height="40" rx="9" fill="#1C1C1E"/>
+                    <g opacity="0.9">
+                      <rect x="6" y="22" width="2.5" height="8" rx="1.25" fill="#FF6B35"/>
+                      <rect x="10" y="16" width="2.5" height="14" rx="1.25" fill="#FF453A"/>
+                      <rect x="14" y="10" width="2.5" height="20" rx="1.25" fill="#FF6B35"/>
+                      <rect x="18" y="6" width="2.5" height="28" rx="1.25" fill="#FF453A"/>
+                      <rect x="22" y="12" width="2.5" height="16" rx="1.25" fill="#FF6B35"/>
+                      <rect x="26" y="8" width="2.5" height="24" rx="1.25" fill="#FFFFFF" opacity="0.9"/>
+                      <rect x="30" y="14" width="2.5" height="12" rx="1.25" fill="#FF453A"/>
+                    </g>
+                  </svg>
+                </div>
+                <div class="vm-flow-text">语音备忘录<br><span>分享 → 存到「文件」</span></div>
+              </div>
+              <div class="vm-flow-arrow">→</div>
+              <div class="vm-flow-item active">
+                <div class="vm-flow-icon" style="font-size:32px;">📁</div>
+                <div class="vm-flow-text">选「选取文件」</div>
+              </div>
+            </div>
+          </div>
+          <label for="fileInput" class="sr-only">选择录音文件</label>
+          <input type="file" id="fileInput" accept=".m4a,.mp3,.wav,.aac,.ogg,.webm,.caf,.flac" />
+        </div>
+        <div class="drag-overlay" id="dragOverlay">松开鼠标上传录音文件</div>
+
+        <div class="modal-overlay" id="micModal" role="dialog" aria-modal="true" aria-labelledby="micModalTitle">
+          <div class="modal">
+            <div class="modal-icon">🎙️</div>
+            <div class="modal-title" id="micModalTitle">需要麦克风权限</div>
+            <div class="modal-desc" id="micModalDesc">点击下方按钮后，浏览器会弹出权限请求，请选择「允许」</div>
+            <button class="modal-btn primary" id="micModalBtn" onclick="requestMic()">允许录音</button>
+            <button class="modal-btn secondary" onclick="closeMicModal()">改用上传文件</button>
+          </div>
+        </div>
+
+        <div class="modal-overlay" id="stopConfirmModal" role="dialog" aria-modal="true" aria-labelledby="stopConfirmTitle">
+          <div class="modal">
+            <div class="modal-icon" style="font-size:40px">⏹</div>
+            <div class="modal-title" id="stopConfirmTitle">确定要停止录音吗？</div>
+            <div class="modal-desc" id="stopConfirmDesc">停止后将开始处理录音并生成会议纪要</div>
+            <button class="modal-btn primary" onclick="confirmStopRecording()">停止录音</button>
+            <button class="modal-btn secondary" onclick="cancelStopRecording()">继续录音</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-overlay" id="regenModal" role="dialog" aria-modal="true" aria-labelledby="regenTitle">
+        <div class="modal" style="max-width:420px; text-align:left;">
+          <div class="modal-title" id="regenTitle" style="text-align:center;">重新生成纪要</div>
+          <div class="modal-desc" style="text-align:center; margin-bottom:16px;">告诉 AI 哪里需要改进，会基于原始转录重新整理</div>
+          <div style="margin-bottom:20px;">
+            <textarea id="regenNotes" placeholder="例如：&#10;· 说话人标错了，讨论预算的是 A 不是 B" rows="4" style="width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:6px; font-size:14px; background:var(--bg); color:var(--text); outline:none; resize:vertical; font-family:inherit; line-height:1.6;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+          </div>
+          <button class="modal-btn primary" onclick="doRegenerate(document.getElementById('regenNotes').value.trim())">开始重新生成</button>
+          <button class="modal-btn secondary" onclick="document.getElementById('regenModal').classList.remove('show')">取消</button>
+        </div>
+      </div>
+
+      <!-- Progress Section -->
+      <div class="progress-area" id="progressArea">
+        <div class="progress-file" id="progressFile"></div>
+        <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"><span class="walker" id="walker">🎙️</span></div></div>
+        <div id="progressPercent" style="text-align:center; margin-top:12px; font-size:36px; font-weight:700; color:var(--accent); font-variant-numeric:tabular-nums; display:none; letter-spacing:-1px;"></div>
+        <div id="progressEta" style="text-align:center; margin-top:2px; font-size:14px; color:var(--muted); font-variant-numeric:tabular-nums; display:none;"></div>
+        <div class="progress-steps" id="progressSteps" style="margin-top:20px;"></div>
+        <div class="witty-msg" id="wittyMsg"></div>
+      </div>
+
+      <!-- Results Section -->
+      <div class="results" id="resultsArea">
+        <div class="results-toolbar">
+          <button class="toolbar-btn primary" onclick="resetUI()">+ 新录音</button>
+          <div class="toolbar-spacer"></div>
+          <button class="toolbar-btn" id="copyMinutesBtn" onclick="copyMinutes()">
+            <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+            复制到 Lark 文档
+          </button>
+          <button class="toolbar-btn" id="copyTextBtn" onclick="copyPlainText()">复制纯文本</button>
+          <button class="toolbar-btn" id="editToggleBtn" onclick="toggleEditMode()">编辑源码</button>
+          <button class="toolbar-btn" id="regenerateBtn" onclick="regenerateMinutes()">重新生成纪要</button>
+        </div>
+
+        <div class="result-stats" id="resultStats"></div>
+
+        <div class="tab-bar" role="tablist">
+          <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="minutesPanel" onclick="switchResultTab('minutes')">会议纪要</button>
+          <button class="tab-btn" role="tab" aria-selected="false" aria-controls="transcriptPanel" onclick="switchResultTab('transcript')">原始转录</button>
+        </div>
+
+        <!-- Minutes Tab -->
+        <div id="minutesPanel">
+          <div class="minutes-editor" id="minutesEditor" spellcheck="false" role="document" aria-label="会议纪要预览"></div>
+          <textarea id="minutesSource" spellcheck="false" style="display:none; width:100%; box-sizing:border-box; min-height:400px; padding:16px; border:1px solid var(--border); border-radius:6px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:13px; line-height:1.7; background:var(--bg); color:var(--text); resize:vertical;" aria-label="会议纪要 Markdown 源码"></textarea>
+          <div class="save-hint" id="saveHint">已自动保存</div>
+        </div>
+
+        <!-- Transcript Tab -->
+        <div class="transcript-panel" id="transcriptPanel">
+          <div class="transcript-toggle" id="transcriptToggle" style="display:none; margin-bottom:12px;">
+            <button type="button" class="seg-btn active" id="segSpeaker" onclick="setTranscriptView('speaker')">显示说话人</button>
+            <button type="button" class="seg-btn" id="segPlain" onclick="setTranscriptView('plain')">纯文字</button>
+          </div>
+          <div class="transcript-content" id="transcriptContent"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tech-footer">
+  <span><span class="tech-label">Whisper</span> 语音转文字</span>
+  <span><span class="tech-label">FFmpeg</span> 音频处理</span>
+  <span><span class="tech-label">OpenCC</span> 繁转简</span>
+</div>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const progressArea = document.getElementById('progressArea');
+const progressBar = document.getElementById('progressBar');
+const progressSteps = document.getElementById('progressSteps');
+const resultsArea = document.getElementById('resultsArea');
+const uploadSection = document.getElementById('uploadSection');
+const minutesEditor = document.getElementById('minutesEditor');
+
+let currentMinutes = '';
+let currentTranscript = '';
+let currentSpeakerTranscript = '';  // LLM 标注说话人后的原文（带 [姓名]）
+let transcriptView = 'speaker';     // 原文视图：'speaker' 带说话人 | 'plain' 纯文字
+let currentId = '';
+const steps = [];
+let crawlTimer = null;
+let wittyTimer = null;
+let saveTimer = null;
+
+// IndexedDB 录音备份：防止刷新丢失
+const DB_NAME = 'kaihui-backup';
+const DB_STORE = 'recording';
+function openBackupDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(DB_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function saveChunksToDB(chunks, mimeType) {
+  try {
+    const db = await openBackupDB();
+    const blob = new Blob(chunks, { type: mimeType });
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).put({ blob, mimeType, ts: Date.now() }, 'current');
+    db.close();
+  } catch (e) {}
+}
+async function loadBackupFromDB() {
+  try {
+    const db = await openBackupDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(DB_STORE, 'readonly');
+      const req = tx.objectStore(DB_STORE).get('current');
+      req.onsuccess = () => { db.close(); resolve(req.result || null); };
+      req.onerror = () => { db.close(); resolve(null); };
+    });
+  } catch (e) { return null; }
+}
+async function clearBackupDB() {
+  try {
+    const db = await openBackupDB();
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).delete('current');
+    db.close();
+  } catch (e) {}
+}
+
+// Witty messages
+const wittyMessages = [
+  // ── 暖心系 ──
+  '工作辛苦了，给自己倒杯咖啡吧 ☕',
+  '录音越长说明会开得越久，心疼你三秒 😢',
+  '去倒杯水，回来刚好，信我 🥤',
+  '每一秒都在为你省下加班时间 ⏰',
+  '你看起来需要一个按摩，但我只会整理纪要 💆',
+  '今天也是努力工作的一天，辛苦了 🌟',
+  '希望今天的会比昨天的短 🤞',
+  '处理完这段，今天的 KPI 就达标了 ✅',
+  '你已经是全公司最会用工具的人了 🧠',
+  '开完会还记得用我，说明你很靠谱 👍',
+
+  // ── 冷幽默系 ──
+  '你负责开会，我负责记，完美分工 🤝',
+  '开会一小时，纪要两分钟，这才叫效率 📝',
+  '比你手动记笔记快 10 倍，不谢 ⚡',
+  '搞定之后，你就是全办公室最早交纪要的人 🏆',
+  '据说经常用我的人，都升职了呢 📈',
+  '别盯着看了，去摸个鱼回来刚好 🐟',
+  '马上就好，请再给我亿点点时间 🤏',
+  '又是为人民服务的一天 🫡',
+  '会议纪要自由，从此刻开始 🎉',
+  '我不需要休息，但你需要 🛋️',
+  '我的时薪大概是 0.003 元，性价比还行吧 💰',
+  '你在等我，我在等 GPU，大家都在等 ⏳',
+  '如果会议能短一半，我也能快一倍 🤷',
+  '我听了你们整场会，但我不会八卦的 🤫',
+  '这段录音里有几个人同时说话，我尽力了 🎧',
+  '我没有耳朵，但我听得很认真 👂',
+
+  // ── 打气系 ──
+  '正在施展 AI 魔法，请稍候 🪄',
+  '正在把声波变成文字，听起来很酷对吧 🎵',
+  '会议结束了，最难的部分已经过去了 🎬',
+  '你开会，我干活，下班见 👋',
+  '正在努力理解你们讨论的高深话题 🤔',
+  '你的会议录音正在被认真对待 📋',
+  '纪要写好了你就自由了，再等等 🕊️',
+  '快了快了，别催，催也没用 😄',
+  '我正在用比你打字快 100 倍的速度整理 ⌨️',
+
+  // ── 哲学系 ──
+  '开会的意义是什么？也许纪要知道答案 📖',
+  '每一场会议都值得被认真记录 ✍️',
+  '文字是会议最忠实的证人 📝',
+  '时间会流逝，但纪要会留下 🕰️',
+  '声音转瞬即逝，文字永远都在 💫',
+
+  // ── 日常系 ──
+  '趁等的时候看看窗外，今天天气怎么样？ 🌤️',
+  '站起来伸个懒腰吧，对脊椎好 🧘',
+  '喝口水，保持水分很重要 💧',
+  '检查一下手机，说不定有人找你 📱',
+  '深呼吸，放松一下肩膀 🌿',
+  '趁现在回复一下刚才没看的消息 💬',
+  '要不要趁这个时间去接杯咖啡？ ☕',
+  '活动一下手腕，程序员和打工人都需要 🤲',
+  '看看待办清单，划掉一个会很爽 ✓',
+  '这个等待时间刚好够刷三条朋友圈 📲',
+  '要不起来走两步？久坐不好 🚶',
+];
+
+function startWittyMessages() {
+  const el = document.getElementById('wittyMsg');
+  // 个人版不出纪要，讲纪要的那几句不播
+  const messages = transcriptOnly ? wittyMessages.filter(m => !m.includes('纪要')) : wittyMessages;
+  let idx = Math.floor(Math.random() * messages.length);
+  const show = () => {
+    el.textContent = messages[idx];
+    idx = (idx + 1) % messages.length;
+  };
+  show();
+  wittyTimer = setInterval(show, 5000);
+}
+
+function stopWittyMessages(msg) {
+  clearInterval(wittyTimer);
+  wittyTimer = null;
+  const el = document.getElementById('wittyMsg');
+  el.textContent = msg || '';
+}
+
+// ────── Step 管理（全局，handleFile 和 finishLiveSession 共用）──────
+function setStepIcon(iconEl, status) {
+  iconEl.textContent = '';
+  if (status === 'active') {
+    const s = document.createElement('span');
+    s.className = 'spinner';
+    iconEl.appendChild(s);
+  } else {
+    iconEl.textContent = status === 'done' ? '✓' : '✗';
+  }
+}
+function addStep(msg, status) {
+  const el = document.createElement('div');
+  el.className = `step ${status}`;
+  const icon = document.createElement('span');
+  icon.className = 'step-icon';
+  setStepIcon(icon, status);
+  const text = document.createElement('span');
+  text.className = 'step-text';
+  text.textContent = msg;
+  el.appendChild(icon);
+  el.appendChild(text);
+  steps.push(el);
+  progressSteps.appendChild(el);
+  return steps.length - 1;
+}
+function updateStep(idx, msg, status) {
+  if (idx < 0 || idx >= steps.length) return;
+  steps[idx].className = `step ${status}`;
+  setStepIcon(steps[idx].querySelector('.step-icon'), status);
+  steps[idx].querySelector('.step-text').textContent = msg;
+}
+
+let crawlValue = 0;
+function startCrawl(from, to) {
+  crawlValue = from;
+  progressBar.style.width = from + '%';
+  clearInterval(crawlTimer);
+  crawlTimer = setInterval(() => {
+    crawlValue += (to - crawlValue) * 0.02;
+    if (crawlValue >= to - 0.1) crawlValue = to - 0.1;
+    progressBar.style.width = crawlValue + '%';
+  }, 300);
+}
+function stopCrawl(snapTo) {
+  clearInterval(crawlTimer);
+  crawlTimer = null;
+  if (snapTo != null) { crawlValue = snapTo; progressBar.style.width = snapTo + '%'; }
+}
+
+// ────── 进度系统 ──────
+// 用户看到的是：百分比 + 预计剩余时间，从 0% 到 100%
+let progressTotalSec = 0;
+let progressStartTime = 0;
+let progressPhase = '';
+let progressTimer = null;
+let progressEstimatedTotal = 0; // 预估总时长（会被实测数据更新）
+
+function setProgress(percent) {
+  progressBar.style.width = Math.min(percent, 100) + '%';
+  const pctEl = document.getElementById('progressPercent');
+  if (pctEl) pctEl.textContent = Math.round(percent) + '%';
+}
+
+function formatEta(seconds) {
+  const s = Math.max(0, Math.round(seconds));
+  if (s <= 0) return '即将完成...';
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return '预计剩余 ' + (m > 0 ? `${m}分${String(sec).padStart(2,'0')}秒` : `${sec}秒`);
+}
+
+// 启动进度条：从 0% 匀速到 95%，显示基于预估的剩余时间
+function startProgressTimer(estimatedSec) {
+  progressEstimatedTotal = estimatedSec;
+  progressStartTime = Date.now();
+  const pctEl = document.getElementById('progressPercent');
+  const etaEl = document.getElementById('progressEta');
+  if (pctEl) pctEl.style.display = '';
+  if (etaEl) { etaEl.style.display = ''; etaEl.textContent = formatEta(estimatedSec); }
+
+  if (progressTimer) clearInterval(progressTimer);
+  progressTimer = setInterval(() => {
+    const elapsed = (Date.now() - progressStartTime) / 1000;
+    const est = progressEstimatedTotal;
+    // 百分比：线性映射到 0→95%，超时后缓慢爬升
+    let pct;
+    if (elapsed <= est) {
+      pct = (elapsed / est) * 95;
+    } else {
+      // 超时：继续爬升，每多10秒+1%，不会感觉卡住
+      pct = 95 + (1 - 1 / (1 + (elapsed - est) / 10)) * 4; // 最多到 99%
+    }
+    setProgress(pct);
+
+    // 剩余时间
+    const remaining = est - elapsed;
+    if (etaEl) etaEl.textContent = formatEta(remaining);
+  }, 1000);
+}
+
+// 用实测数据更新预估总时长（不重启 timer，只调整速度）
+function recalibrateProgress(newEstimatedTotal) {
+  progressEstimatedTotal = newEstimatedTotal;
+}
+
+function stopProgressTimer(finalPct) {
+  if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
+  if (finalPct != null) setProgress(finalPct);
+  const etaEl = document.getElementById('progressEta');
+  if (etaEl) etaEl.style.display = 'none';
+}
+
+// Tab switching
+function switchResultTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (tab === 'minutes') {
+    document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    document.getElementById('minutesPanel').style.display = '';
+    document.getElementById('transcriptPanel').classList.remove('show');
+  } else {
+    document.querySelectorAll('.tab-btn')[1].classList.add('active');
+    document.getElementById('minutesPanel').style.display = 'none';
+    document.getElementById('transcriptPanel').classList.add('show');
+  }
+}
+
+// 原文视图切换：带说话人 vs 纯文字（仅在有标注结果时可切换）
+function setTranscriptView(view) {
+  transcriptView = view;
+  document.getElementById('segSpeaker').classList.toggle('active', view === 'speaker');
+  document.getElementById('segPlain').classList.toggle('active', view === 'plain');
+  renderTranscript();
+}
+
+// 渲染原文：有说话人标注且当前选中"说话人"视图时显示标注版，否则纯文字
+// 用 textContent 渲染（不走 innerHTML），避免转录内容里的特殊字符造成 XSS
+function renderTranscript() {
+  const hasSpeaker = !!currentSpeakerTranscript;
+  document.getElementById('transcriptToggle').style.display = hasSpeaker ? '' : 'none';
+  const useSpeaker = hasSpeaker && transcriptView === 'speaker';
+  document.getElementById('transcriptContent').textContent =
+    useSpeaker ? currentSpeakerTranscript : currentTranscript;
+}
+
+// Recording
+let mediaRecorder = null;
+let recordChunks = [];
+let recordStartTime = 0;
+let recordTimerInterval = null;
+
+// 边录边转
+let liveSessionId = null;
+let chunkIndex = 0;
+let chunkBuffer = [];
+let liveMimeType = '';
+const CHUNK_DURATION_SEC = 30;
+// 追踪 fire-and-forget 的 chunk 上传 Promise，onstop 时等待它们全部落地
+// 否则点停止时若上一个 chunk 还在路上，会被后端 finished=true 判定为 409 拒掉
+const pendingChunks = new Set();
+let liveChunksDone = 0;
+let liveTotalChars = 0;
+
+function toggleRecording() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    document.getElementById('stopConfirmModal').classList.add('show');
+    return;
+  }
+  requestMic();
+}
+
+function confirmStopRecording() {
+  document.getElementById('stopConfirmModal').classList.remove('show');
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+    document.getElementById('recordBtn').classList.remove('recording');
+    const _landing = document.querySelector('.landing');
+    if (_landing) _landing.classList.remove('is-recording');
+    document.getElementById('recordLabel').textContent = '开始录音';
+    document.getElementById('recordHint').textContent = '正在处理...';
+    document.getElementById('liveStatus').style.display = 'none';
+    clearInterval(recordTimerInterval);
+    window.onbeforeunload = null;
+    document.body.style.overscrollBehavior = '';
+    document.documentElement.style.overscrollBehavior = '';
+  }
+}
+
+function cancelStopRecording() {
+  document.getElementById('stopConfirmModal').classList.remove('show');
+}
+
+function showMicModal(type) {
+  const modal = document.getElementById('micModal');
+  const title = document.getElementById('micModalTitle');
+  const desc = document.getElementById('micModalDesc');
+  const btn = document.getElementById('micModalBtn');
+
+  if (type === 'needHttps') {
+    const httpsUrl = `https://${location.hostname}:3443`;
+    title.textContent = '录音需要在电脑端使用';
+    desc.innerHTML = `在电脑浏览器打开 <a href="${httpsUrl}" style="color:var(--accent);font-weight:600">${httpsUrl}</a> 即可录音。<br><br>手机端可以用「语音备忘录」录音后上传。`;
+    btn.textContent = '好的，我上传文件';
+    btn.onclick = () => { closeMicModal(); fileInput.click(); };
+  } else if (type === 'denied') {
+    title.textContent = '麦克风权限被拒绝';
+    desc.textContent = '请点击浏览器地址栏左侧的锁头图标，将麦克风权限改为「允许」，然后刷新页面。';
+    btn.textContent = '刷新页面';
+    btn.onclick = () => location.reload();
+  } else {
+    title.textContent = '当前浏览器不支持录音';
+    desc.textContent = '请直接上传录音文件。';
+    btn.textContent = '我知道了';
+    btn.onclick = closeMicModal;
+  }
+  modal.classList.add('show');
+}
+
+function closeMicModal() { document.getElementById('micModal').classList.remove('show'); }
+
+async function requestMic() {
+  closeMicModal();
+  // 必须在 HTTPS 下才能使用麦克风（localhost 除外）
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    showMicModal('needHttps');
+    return;
+  }
+  try {
+    if (!navigator.mediaDevices?.getUserMedia) throw { name: 'NotSupportedError' };
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/mp4';
+    liveMimeType = mimeType;
+    mediaRecorder = new MediaRecorder(stream, { mimeType });
+    recordChunks = [];
+    chunkBuffer = [];
+    chunkIndex = 0;
+    liveChunksDone = 0;
+    liveTotalChars = 0;
+
+    // 启动边录边转 session
+    try {
+      const res = await fetch('/api/live/start', { method: 'POST' });
+      const data = await res.json();
+      liveSessionId = data.sessionId;
+      console.log('[live] session 已创建:', liveSessionId);
+    } catch (e) {
+      console.error('[live] 创建 session 失败，回退到传统模式', e);
+      liveSessionId = null;
+    }
+
+    mediaRecorder.ondataavailable = e => {
+      if (e.data.size > 0) {
+        recordChunks.push(e.data);
+        saveChunksToDB(recordChunks, mimeType);
+
+        // 边录边转：累积 chunk，每 30 秒发送一次
+        if (liveSessionId) {
+          chunkBuffer.push(e.data);
+          if (chunkBuffer.length >= CHUNK_DURATION_SEC) {
+            const toSend = chunkBuffer.splice(0);
+            const p = sendLiveChunk(toSend, chunkIndex++);
+            pendingChunks.add(p);
+            p.finally(() => pendingChunks.delete(p));
+          }
+        }
+      }
+    };
+
+    mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+
+      // 弹备忘录，用户填完后再处理
+      showMemoModal(async (ctx) => {
+        // 关键：先等所有 fire-and-forget 的 chunk 都上传完，否则 finish 后到达的会被 409 拒掉
+        if (pendingChunks.size > 0) {
+          await Promise.allSettled([...pendingChunks]);
+        }
+        const dateStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' });
+        if (liveSessionId && chunkIndex > 0) {
+          const lastBlobs = chunkBuffer.splice(0);
+          await finishLiveSession(lastBlobs, chunkIndex, ctx);
+        } else if (liveSessionId && chunkIndex === 0) {
+          const lastBlobs = chunkBuffer.splice(0);
+          if (lastBlobs.length > 0) {
+            await finishLiveSession(lastBlobs, 0, ctx);
+          } else {
+            liveSessionId = null;
+            // clearBackupDB 移到 complete 事件触发，handleFile 失败时保留备份
+            const ext = mimeType.includes('webm') ? 'webm' : 'm4a';
+            const blob = new Blob(recordChunks, { type: mimeType });
+            const file = new File([blob], `会议录音_${dateStr}.${ext}`, { type: mimeType });
+            handleFile(file, ctx);
+          }
+        } else {
+          // clearBackupDB 移到 complete 事件触发，handleFile 失败时保留备份
+          const ext = mimeType.includes('webm') ? 'webm' : 'm4a';
+          const blob = new Blob(recordChunks, { type: mimeType });
+          const file = new File([blob], `会议录音_${dateStr}.${ext}`, { type: mimeType });
+          handleFile(file, ctx);
+        }
+      }); // end showMemoModal
+    };
+
+    mediaRecorder.start(1000);
+    window.onbeforeunload = () => '录音进行中，离开页面将丢失录音内容';
+    document.body.style.overscrollBehavior = 'none';
+    document.documentElement.style.overscrollBehavior = 'none';
+    document.getElementById('recordBtn').classList.add('recording');
+    document.querySelector('.landing').classList.add('is-recording');
+    document.getElementById('recordLabel').textContent = '点击停止';
+    document.getElementById('recordHint').textContent = '录音中';
+    document.getElementById('recordTimer').style.display = '';
+    document.getElementById('liveStatus').style.display = liveSessionId ? '' : 'none';
+    recordStartTime = Date.now();
+
+    recordTimerInterval = setInterval(() => {
+      const sec = Math.floor((Date.now() - recordStartTime) / 1000);
+      const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+      const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+      const s = String(sec % 60).padStart(2, '0');
+      document.getElementById('recordTimer').textContent = `${h}:${m}:${s}`;
+    }, 1000);
+  } catch (err) {
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') showMicModal('denied');
+    else showMicModal('unsupported');
+  }
+}
+
+// 发送一个音频片段到服务端转录（后台进行，不阻塞录音）
+async function sendLiveChunk(blobs, index) {
+  if (!liveSessionId) return;
+  const blob = new Blob(blobs, { type: liveMimeType });
+  const ext = liveMimeType.includes('webm') ? 'webm' : 'm4a';
+  const formData = new FormData();
+  formData.append('chunk', blob, `chunk_${index}.${ext}`);
+
+  try {
+    const res = await fetch(`/api/live/chunk/${liveSessionId}?index=${index}`, {
+      method: 'POST', body: formData
+    });
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const ev = JSON.parse(line.slice(6));
+          if (ev.type === 'chunk_done') {
+            liveChunksDone++;
+            liveTotalChars = ev.totalChars || liveTotalChars;
+            updateLiveStatus();
+          }
+        } catch (e) {}
+      }
+    }
+  } catch (e) {
+    console.error(`[live] chunk ${index} 发送失败:`, e);
+  }
+}
+
+function updateLiveStatus() {
+  const el = document.getElementById('liveStatus');
+  if (el) {
+    document.getElementById('liveChunkCount').textContent = liveChunksDone;
+    document.getElementById('liveCharCount').textContent = liveTotalChars;
+  }
+}
+
+// 结束录音：发送最后一段 + 触发纪要生成
+async function finishLiveSession(lastBlobs, lastIndex, userContext) {
+  userContext = userContext || { topic: '', participants: '', notes: '' };
+  // 切换到进度 UI
+  uploadSection.style.display = 'none';
+  resultsArea.classList.remove('show');
+  progressArea.classList.add('show');
+  document.getElementById('progressFile').textContent = `实时录音（已转录 ${liveTotalChars} 字）`;
+  progressSteps.innerHTML = '';
+  progressBar.style.width = '60%'; // 转录已基本完成
+  progressBar.classList.remove('done');
+  steps.length = 0;
+  minutesEditor.textContent = '';
+  currentMinutes = '';
+  currentTranscript = '';
+  currentSpeakerTranscript = '';
+
+  const transcribeIdx = addStep(`${liveChunksDone} 段已转录（${liveTotalChars} 字）`, 'done');
+  const lastChunkIdx = lastBlobs.length > 0 ? addStep('正在转录最后一段...', 'active') : -1;
+  startCrawl(60, 95);
+  startWittyMessages();
+
+  const formData = new FormData();
+  if (lastBlobs.length > 0) {
+    const blob = new Blob(lastBlobs, { type: liveMimeType });
+    const ext = liveMimeType.includes('webm') ? 'webm' : 'm4a';
+    formData.append('chunk', blob, `chunk_${lastIndex}.${ext}`);
+  }
+  if (userContext.topic) formData.append('topic', userContext.topic);
+  if (userContext.participants) formData.append('participants', userContext.participants);
+  if (userContext.notes) formData.append('notes', userContext.notes);
+
+  try {
+    const response = await fetch(
+      `/api/live/finish/${liveSessionId}?index=${lastIndex}`,
+      { method: 'POST', body: formData }
+    );
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: '处理失败' }));
+      throw new Error(err.error || `服务器错误 (${response.status})`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let minutesIdx = -1, speakerIdx = -1;
+
+    function handleEvent(ev) {
+      if (ev.type === 'chunk_done') {
+        if (lastChunkIdx >= 0) updateStep(lastChunkIdx, '最后一段转录完成', 'done');
+      } else if (ev.type === 'chunk_error') {
+        if (lastChunkIdx >= 0) updateStep(lastChunkIdx, '最后一段转录失败', 'error');
+      } else if (ev.type === 'progress') {
+        switch (ev.step) {
+          case 'transcribe_done':
+            currentTranscript = ev.transcript || '';
+            updateStep(transcribeIdx, `语音识别完成（${ev.message}）`, 'done');
+            break;
+          case 'speaker':
+            if (speakerIdx < 0) speakerIdx = addStep(ev.message, 'active');
+            else updateStep(speakerIdx, ev.message, 'active');
+            break;
+          case 'speaker_done':
+            if (speakerIdx >= 0) updateStep(speakerIdx, ev.message, 'done');
+            break;
+          case 'minutes':
+            minutesIdx = addStep(ev.message, 'active');
+            startCrawl(70, 95);
+            break;
+          case 'minutes_done':
+            if (minutesIdx >= 0) updateStep(minutesIdx, ev.message, 'done');
+            stopCrawl(95);
+            break;
+        }
+      } else if (ev.type === 'speaker_chunk') {
+        currentSpeakerTranscript += ev.content;
+      } else if (ev.type === 'minutes_chunk') {
+        currentMinutes += ev.content;
+        setMinutesContent(currentMinutes);
+        minutesEditor.scrollTop = minutesEditor.scrollHeight;
+      } else if (ev.type === 'complete') {
+        currentId = ev.id;
+        stopCrawl(100);
+        progressBar.classList.add('done');
+        document.getElementById('walker').textContent = '✅';
+        stopWittyMessages('搞定！');
+        addStep('全部完成！', 'done');
+        setTimeout(() => showResults(ev), 800);
+        loadHistory();
+        // 只有成功完成才清备份，失败/中断时保留供刷新后恢复
+        clearBackupDB();
+      } else if (ev.type === 'error') {
+        stopCrawl(null);
+        stopWittyMessages();
+        addStep('错误: ' + ev.message, 'error');
+      }
+    }
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try { handleEvent(JSON.parse(line.slice(6))); } catch (e) {}
+      }
+    }
+    if (buffer.trim() && buffer.trim().startsWith('data: ')) {
+      try { handleEvent(JSON.parse(buffer.trim().slice(6))); } catch (e) {}
+    }
+  } catch (err) {
+    stopCrawl(null);
+    stopWittyMessages();
+    addStep('网络错误: ' + err.message, 'error');
+  }
+
+  liveSessionId = null;
+  // 注意：clearBackupDB 已移到 handleEvent 的 'complete' 分支，仅在成功时清
+  // 这里不清，保留备份给失败/中断后的恢复流程
+}
+
+// ────── 会前备忘 ──────
+// 会前备忘（主题 / 参会人 / 备注）原本只喂给 AI 纪要；公开版只出原文，直接开始处理
+function showMemoModal(callback) {
+  callback({ topic: '', participants: '', notes: '' });
+}
+
+// ────── 只出原文 ──────
+// 界面收起靠 body.transcript-only 的 CSS，这里只换掉提到纪要的文案
+let transcriptOnly = true;   // 公开版只出原文；/api/config 也固定返回 true
+
+function recordHintText() {
+  return transcriptOnly ? '录完自动出原文' : '录完自动生成纪要';
+}
+
+async function fetchConfig() {
+  try {
+    const res = await fetch('/api/config');
+    transcriptOnly = !!(await res.json()).transcriptOnly;
+  } catch (e) {
+    console.error('[config] 加载失败，按只出原文显示:', e);
+  }
+  if (!transcriptOnly) return;
+  document.body.classList.add('transcript-only');
+  document.getElementById('headerBadge').textContent = '本地转录 · 数据不出本机';
+  document.getElementById('historyHint').textContent = '点击查看之前的转录';
+  document.getElementById('stopConfirmDesc').textContent = '停止后将开始转录录音';
+  document.getElementById('recordHint').textContent = recordHintText();
+}
+
+// Upload handlers
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
+fileInput.addEventListener('change', e => {
+  if (e.target.files.length) {
+    const file = e.target.files[0];
+    showMemoModal(ctx => handleFile(file, ctx));
+  }
+});
+
+const dragOverlay = document.getElementById('dragOverlay');
+document.addEventListener('dragover', e => { e.preventDefault(); dragOverlay.classList.add('show'); });
+document.addEventListener('dragleave', e => { if (e.relatedTarget === null) dragOverlay.classList.remove('show'); });
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  dragOverlay.classList.remove('show');
+  if (e.dataTransfer.files.length) {
+    const file = e.dataTransfer.files[0];
+    showMemoModal(ctx => handleFile(file, ctx));
+  }
+});
+
+// Main processing
+async function handleFile(file, userContext) {
+  userContext = userContext || { topic: '', participants: '', notes: '' };
+  uploadSection.style.display = 'none';
+  resultsArea.classList.remove('show');
+  progressArea.classList.add('show');
+  document.getElementById('progressFile').textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
+  progressSteps.innerHTML = '';
+  progressBar.style.width = '0%';
+  progressBar.classList.remove('done');
+  const _pctEl = document.getElementById('progressPercent');
+  const _etaEl = document.getElementById('progressEta');
+  _pctEl.style.display = '';
+  _pctEl.style.color = 'var(--accent)';
+  _pctEl.style.fontSize = '36px';
+  _pctEl.textContent = '0%';
+  _etaEl.style.display = '';
+  _etaEl.textContent = '正在上传文件...';
+  progressPhase = '';
+  steps.length = 0;
+  minutesEditor.textContent = '';
+  currentMinutes = '';
+  currentTranscript = '';
+  currentSpeakerTranscript = '';
+
+  const uploadIdx = addStep('上传文件中...', 'active');
+  startWittyMessages();
+
+  const formData = new FormData();
+  formData.append('audio', file);
+  if (userContext.topic) formData.append('topic', userContext.topic);
+  if (userContext.participants) formData.append('participants', userContext.participants);
+  if (userContext.notes) formData.append('notes', userContext.notes);
+
+  try {
+    const response = await fetch('/api/transcribe', { method: 'POST', body: formData });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: '上传失败' }));
+      throw new Error(err.error || `服务器错误 (${response.status})`);
+    }
+    updateStep(uploadIdx, '文件上传完成', 'done');
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let convertIdx = -1, transcribeIdx = -1, minutesIdx = -1, speakerIdx = -1;
+
+    // P1 fix: extracted event handler (reused for buffer residual)
+    function handleSSEEvent(ev) {
+      if (ev.type === 'progress') {
+        switch (ev.step) {
+          case 'convert':
+            convertIdx = addStep(ev.message, 'active');
+            break;
+          case 'convert_done': {
+            const dur = ev.duration || 0;
+            const durStr = dur > 0 ? `${Math.floor(dur/60)}分${dur%60}秒` : '';
+            if (convertIdx >= 0) updateStep(convertIdx, `音频就绪${durStr ? '（' + durStr + '）' : ''}`, 'done');
+            // 启动统一进度条
+            // 实测：2分钟分段，每段26秒，总耗时约 dur×0.22 + 30秒纪要
+            if (dur > 0) {
+              startProgressTimer(Math.max(60, Math.round(dur * 0.25) + 30));
+            } else {
+              startProgressTimer(120);
+            }
+            break;
+          }
+          case 'transcribe':
+            transcribeIdx = addStep('正在语音识别...', 'active');
+            break;
+          case 'transcribe_segment':
+            if (transcribeIdx >= 0) {
+              const ts = steps[transcribeIdx].querySelector('.step-text');
+              if (ts) ts.textContent = '正在语音识别...';
+            }
+            // current 表示"正在处理第N段"，已完成 = current - 1
+            // 至少完成 1 段后才有实测数据来校准
+            if (ev.current > 1 && ev.total && progressStartTime) {
+              const completedSegs = ev.current - 1;
+              const elapsed = (Date.now() - progressStartTime) / 1000;
+              const perSeg = elapsed / completedSegs;
+              const remainingSegs = ev.total - completedSegs;
+              const newTotal = elapsed + perSeg * remainingSegs + 20;
+              recalibrateProgress(newTotal);
+            }
+            break;
+          case 'transcribe_done':
+            if (transcribeIdx >= 0) updateStep(transcribeIdx, `语音识别完成（${(ev.transcript||'').length}字）`, 'done');
+            currentTranscript = ev.transcript || '';
+            break;
+          case 'speaker':
+            if (speakerIdx < 0) speakerIdx = addStep(ev.message, 'active');
+            else updateStep(speakerIdx, ev.message, 'active');
+            break;
+          case 'speaker_done':
+            if (speakerIdx >= 0) updateStep(speakerIdx, ev.message, 'done');
+            break;
+          case 'minutes':
+            minutesIdx = addStep('正在生成会议纪要...', 'active');
+            break;
+          case 'minutes_done':
+            if (minutesIdx >= 0) updateStep(minutesIdx, ev.message, 'done');
+            break;
+        }
+      } else if (ev.type === 'speaker_chunk') {
+        currentSpeakerTranscript += ev.content;
+      } else if (ev.type === 'minutes_chunk') {
+        currentMinutes += ev.content;
+        setMinutesContent(currentMinutes);
+        minutesEditor.scrollTop = minutesEditor.scrollHeight;
+      } else if (ev.type === 'complete') {
+        currentId = ev.id;
+        stopProgressTimer(100);
+        progressBar.classList.add('done');
+        document.getElementById('walker').textContent = '✅';
+        document.getElementById('progressPercent').textContent = '100%';
+        document.getElementById('progressPercent').style.color = 'var(--green)';
+        stopWittyMessages('搞定！');
+        addStep('全部完成！', 'done');
+        setTimeout(() => showResults(ev), 800);
+        loadHistory();
+        // 普通上传/恢复备份成功后也要清备份，否则下次刷新会再次提示"恢复未完成的录音"
+        clearBackupDB();
+      } else if (ev.type === 'error') {
+        stopProgressTimer(null);
+        stopWittyMessages();
+        addStep('错误: ' + ev.message, 'error');
+      }
+    }
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try { handleSSEEvent(JSON.parse(line.slice(6))); } catch (e) {}
+      }
+    }
+    // P1 fix: process remaining buffer after stream ends
+    if (buffer.trim() && buffer.trim().startsWith('data: ')) {
+      try { handleSSEEvent(JSON.parse(buffer.trim().slice(6))); } catch (e) {}
+    }
+  } catch (err) {
+    stopProgressTimer(null);
+    stopWittyMessages();
+    addStep('网络错误: ' + err.message, 'error');
+  }
+}
+
+// 简单 markdown → HTML 渲染（安全：先转义 HTML）
+function renderMarkdown(text) {
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/^\*\*(.+?)\*\*$/gm, '<strong>$1</strong>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^- \[ \] (.+)$/gm, '<div style="margin:2px 0">☐ $1</div>')
+    .replace(/^- (.+)$/gm, '<div style="margin:2px 0;padding-left:1em">• $1</div>')
+    .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid var(--border);margin:16px 0">')
+    .replace(/^(\d+)\. (.+)$/gm, '<div style="margin:2px 0">$1. $2</div>')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+}
+
+function setMinutesContent(text) {
+  minutesEditor.innerHTML = renderMarkdown(text);
+  // 切换历史/新录音/重新生成时，强制退出"编辑源码"模式，避免显示旧 textarea 内容
+  const source = document.getElementById('minutesSource');
+  const editBtn = document.getElementById('editToggleBtn');
+  if (source && source.style.display !== 'none') {
+    source.style.display = 'none';
+    minutesEditor.style.display = '';
+    if (editBtn) editBtn.textContent = '编辑源码';
+  }
+}
+
+function showResults(ev) {
+  progressArea.classList.remove('show');
+  resultsArea.classList.add('show');
+
+  // 恢复原始转录 Tab、复制纯文本按钮、重新生成按钮
+  document.querySelectorAll('.tab-btn')[1].style.display = '';
+  document.getElementById('copyTextBtn').style.display = '';
+  document.getElementById('regenerateBtn').style.display = '';
+
+  const duration = ev?.duration || 0;
+  const charCount = ev?.charCount || currentTranscript.length;
+  setResultStats(ev?.originalName || '', duration, charCount);
+
+  // Set content
+  setMinutesContent(currentMinutes);
+  transcriptView = 'speaker';
+  renderTranscript();
+
+  // Reset tab to minutes
+  switchResultTab('minutes');
+}
+
+// P1 fix: safe stats renderer (no innerHTML with user data)
+function setResultStats(name, duration, charCount) {
+  const el = document.getElementById('resultStats');
+  el.innerHTML = '';
+  const s1 = document.createElement('span'); s1.textContent = name;
+  const s2 = document.createElement('span'); s2.textContent = Math.floor(duration/60) + '分' + (duration%60) + '秒';
+  const s3 = document.createElement('span'); s3.textContent = '转录 ' + charCount + '字';
+  el.append(s1, s2, s3);
+}
+
+// Markdown 双模式：预览（minutesEditor，contenteditable=false）vs 编辑（textarea minutesSource）
+// 旧版用 contenteditable + textContent 保存，每次"输入"事件都把渲染后的纯文本写回 currentMinutes，
+// 导致 Markdown 格式标记（#、-、---、**）丢失，标题/列表/分隔线被压扁
+// 新版：预览不可改，要改就点"编辑源码"进 textarea，编辑 Markdown 原文
+const minutesSource = document.getElementById('minutesSource');
+function toggleEditMode() {
+  const editor = document.getElementById('minutesEditor');
+  const btn = document.getElementById('editToggleBtn');
+  const inEdit = minutesSource.style.display !== 'none';
+  if (!inEdit) {
+    // 切到编辑模式：把当前 Markdown 源码灌进 textarea
+    minutesSource.value = currentMinutes;
+    minutesSource.style.display = '';
+    editor.style.display = 'none';
+    btn.textContent = '完成编辑';
+    minutesSource.focus();
+  } else {
+    // 切回预览：currentMinutes 已经在 input 监听里实时更新，这里只重渲
+    setMinutesContent(currentMinutes);
+    minutesSource.style.display = 'none';
+    editor.style.display = '';
+    btn.textContent = '编辑源码';
+  }
+}
+
+// Auto-save on edit（textarea 编辑模式才触发；预览模式不可改）
+minutesSource.addEventListener('input', () => {
+  currentMinutes = minutesSource.value;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    if (!currentId) return;
+    try {
+      await fetch(`/api/transcript/${currentId}/minutes`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ minutes: currentMinutes }),
+      });
+      const hint = document.getElementById('saveHint');
+      hint.classList.add('show');
+      setTimeout(() => hint.classList.remove('show'), 2000);
+    } catch (e) {}
+  }, 1000);
+});
+
+// Copy functions
+// 重新生成纪要 — 弹输入框让用户写修改要求
+function regenerateMinutes() {
+  if (!currentId) return;
+  document.getElementById('regenNotes').value = '';
+  document.getElementById('regenModal').classList.add('show');
+}
+
+async function doRegenerate(notes) {
+  document.getElementById('regenModal').classList.remove('show');
+  const btn = document.getElementById('regenerateBtn');
+  btn.disabled = true;
+  btn.textContent = '正在重新生成...';
+
+  switchResultTab('minutes');
+  currentMinutes = '';
+  minutesEditor.innerHTML = '';
+  minutesEditor.classList.add('streaming');
+
+  try {
+    const response = await fetch(`/api/transcript/${currentId}/regenerate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notes }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: '请求失败' }));
+      throw new Error(err.error || `服务器错误 (${response.status})`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const ev = JSON.parse(line.slice(6));
+          if (ev.type === 'minutes_chunk') {
+            currentMinutes += ev.content;
+            setMinutesContent(currentMinutes);
+            minutesEditor.scrollTop = minutesEditor.scrollHeight;
+          } else if (ev.type === 'complete') {
+            currentMinutes = ev.minutes || currentMinutes;
+            setMinutesContent(currentMinutes);
+          } else if (ev.type === 'error') {
+            throw new Error(ev.message);
+          }
+        } catch (e) {
+          if (e.message && !e.message.includes('JSON')) throw e;
+        }
+      }
+    }
+  } catch (err) {
+    alert('重新生成失败: ' + err.message);
+  } finally {
+    minutesEditor.classList.remove('streaming');
+    btn.disabled = false;
+    btn.textContent = '重新生成纪要';
+  }
+}
+
+function copyMinutes() {
+  const btn = document.getElementById('copyMinutesBtn');
+  copyText(currentMinutes, btn, '复制到 Lark 文档');
+}
+
+function copyPlainText() {
+  const btn = document.getElementById('copyTextBtn');
+  // 复制当前视图：显示说话人时复制带 [姓名] 的版本，否则复制纯文字
+  const text = (currentSpeakerTranscript && transcriptView === 'speaker') ? currentSpeakerTranscript : currentTranscript;
+  copyText(text, btn, '复制纯文本');
+}
+
+function copyText(text, btn, originalLabel) {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => showCopied(btn, originalLabel)).catch(() => fallbackCopy(text, btn, originalLabel));
+  } else {
+    fallbackCopy(text, btn, originalLabel);
+  }
+}
+
+function fallbackCopy(text, btn, label) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;left:-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  showCopied(btn, label);
+}
+
+function showCopied(btn, originalLabel) {
+  if (btn._copyTimer) return; // 防止双击覆盖
+  const origHTML = btn.innerHTML;
+  btn.innerHTML = '已复制 ✓';
+  btn.classList.add('copied');
+  btn._copyTimer = setTimeout(() => { btn.innerHTML = origHTML; btn.classList.remove('copied'); btn._copyTimer = null; }, 2000);
+}
+
+function resetUI() {
+  stopCrawl(0);
+  stopProgressTimer(0);
+  const _pctEl2 = document.getElementById('progressPercent');
+  const _etaEl2 = document.getElementById('progressEta');
+  if (_pctEl2) _pctEl2.style.display = 'none';
+  if (_etaEl2) _etaEl2.style.display = 'none';
+  stopWittyMessages();
+  window.onbeforeunload = null;
+  document.body.style.overscrollBehavior = '';
+  document.documentElement.style.overscrollBehavior = '';
+  // 停止录音但不触发 onstop 处理流程（用户主动点了"新录音"）
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.onstop = null;
+    mediaRecorder.stop();
+  }
+  clearInterval(recordTimerInterval);
+  uploadSection.style.display = '';
+  progressArea.classList.remove('show');
+  resultsArea.classList.remove('show');
+  progressSteps.innerHTML = '';
+  progressBar.style.width = '0%';
+  progressBar.classList.remove('done');
+  const walker = document.getElementById('walker');
+  walker.textContent = '🎙️';
+  fileInput.value = '';
+  steps.length = 0;
+  currentId = '';
+  currentMinutes = '';
+  currentTranscript = '';
+  currentSpeakerTranscript = '';
+
+  document.getElementById('recordTimer').style.display = 'none';
+  document.getElementById('recordTimer').textContent = '00:00:00';
+  document.getElementById('recordHint').textContent = recordHintText();
+  document.getElementById('recordBtn').classList.remove('recording');
+  const landingEl = document.querySelector('.landing');
+  if (landingEl) landingEl.classList.remove('is-recording');
+  document.getElementById('recordLabel').textContent = '开始录音';
+  document.getElementById('liveStatus').style.display = 'none';
+
+  // 清理边录边转状态
+  liveSessionId = null;
+  chunkIndex = 0;
+  chunkBuffer = [];
+  liveChunksDone = 0;
+  liveTotalChars = 0;
+}
+
+// P1 fix: mobile sidebar toggle
+function toggleMobileSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('show');
+}
+
+// History
+// P1 fix: use DOM API instead of innerHTML to prevent XSS
+async function loadHistory() {
+  try {
+    const res = await fetch('/api/history');
+    const list = await res.json();
+    const el = document.getElementById('historyList');
+    el.innerHTML = '';
+    document.getElementById('clearAllBtn').style.display = list.length ? '' : 'none';
+    if (!list.length) { el.innerHTML = '<div class="history-empty">还没有录音<br>点右边的麦克风开始吧</div>'; return; }
+    list.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'history-item';
+      div.addEventListener('click', () => loadTranscript(item.id, div));
+
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = item.originalName;
+      div.appendChild(name);
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      const dur = document.createElement('span');
+      dur.textContent = Math.floor(item.duration/60) + '分' + (item.duration%60) + '秒';
+      const chars = document.createElement('span');
+      chars.textContent = item.charCount + '字';
+      meta.append(dur, chars);
+      if (item.hasMinutes) {
+        const badge = document.createElement('span');
+        badge.textContent = '📋 有纪要';
+        meta.appendChild(badge);
+      }
+      div.appendChild(meta);
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'delete-btn';
+      delBtn.textContent = '✕';
+      delBtn.title = '删除';
+      delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteTranscript(item.id); });
+      div.appendChild(delBtn);
+
+      el.appendChild(div);
+    });
+  } catch (e) {}
+}
+
+async function deleteTranscript(id) {
+  if (!confirm('确定删除这条记录吗？')) return;
+  try {
+    await fetch(`/api/transcript/${id}`, { method: 'DELETE' });
+    loadHistory();
+    if (currentId === id) resetUI();
+  } catch (e) {}
+}
+
+async function clearAllHistory() {
+  if (!confirm('确定清除全部历史记录吗？此操作不可撤销。')) return;
+  try {
+    const res = await fetch('/api/history');
+    const list = await res.json();
+    await Promise.all(list.map(item => fetch(`/api/transcript/${item.id}`, { method: 'DELETE' })));
+    loadHistory();
+    resetUI();
+  } catch (e) {}
+}
+
+async function loadTranscript(id, el) {
+  try {
+    const res = await fetch(`/api/transcript/${id}`);
+    const data = await res.json();
+
+    currentId = data.id;
+    currentMinutes = data.minutes || '';
+    currentTranscript = data.transcript || '';
+    currentSpeakerTranscript = data.speakerTranscript || '';
+    transcriptView = 'speaker';
+
+    uploadSection.style.display = 'none';
+    progressArea.classList.remove('show');
+    resultsArea.classList.add('show');
+
+    setResultStats(data.originalName || '', data.duration || 0, data.charCount || 0);
+
+    setMinutesContent(currentMinutes);
+    renderTranscript();
+
+    // 有转录文本时显示原始转录 tab，没有时隐藏
+    const hasTranscript = !!currentTranscript;
+    document.querySelectorAll('.tab-btn')[1].style.display = hasTranscript ? '' : 'none';
+    document.getElementById('copyTextBtn').style.display = hasTranscript ? '' : 'none';
+    // 有转录文本才能重新生成纪要
+    document.getElementById('regenerateBtn').style.display = hasTranscript ? '' : 'none';
+    switchResultTab('minutes');
+
+    document.querySelectorAll('.history-item').forEach(i => i.classList.remove('active'));
+    if (el) el.classList.add('active');
+
+    // 手机端点击后自动收起侧边栏
+    if (window.innerWidth <= 768) toggleMobileSidebar();
+  } catch (e) {
+    console.error('loadTranscript error:', e);
+  }
+}
+
+loadHistory();
+fetchConfig();
+
+// iPhone 端：优化上传文案，引导语音备忘录
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+if (isIOS) {
+  document.getElementById('uploadLabel').textContent = '上传录音文件';
+  document.getElementById('voiceMemoGuide').style.display = '';
+}
+
+// 页面加载时检查是否有被刷新中断的录音备份
+(async function checkBackup() {
+  const backup = await loadBackupFromDB();
+  if (!backup || !backup.blob || backup.blob.size < 1000) {
+    clearBackupDB();
+    return;
+  }
+  // 超过 24 小时的备份自动丢弃
+  if (Date.now() - backup.ts > 24 * 60 * 60 * 1000) {
+    clearBackupDB();
+    return;
+  }
+  const ext = backup.mimeType.includes('webm') ? 'webm' : 'm4a';
+  const sizeMB = (backup.blob.size / 1024 / 1024).toFixed(1);
+  const ago = Math.round((Date.now() - backup.ts) / 1000);
+  const agoText = ago < 60 ? `${ago}秒前` : `${Math.round(ago/60)}分钟前`;
+
+  // 复用已有的 modal 组件弹出恢复提示
+  const modal = document.getElementById('micModal');
+  const title = document.getElementById('micModalTitle');
+  const desc = document.getElementById('micModalDesc');
+  const btn = document.getElementById('micModalBtn');
+  title.textContent = '发现未完成的录音';
+  desc.textContent = `${agoText}有一段录音被意外中断（${sizeMB} MB），是否继续处理？`;
+  btn.textContent = '恢复并处理';
+  // 先设置 secondBtn 状态（用闭包变量供两个分支共用还原逻辑）
+  const secondBtn = modal.querySelector('.modal-btn.secondary');
+  const origOnclick = secondBtn.onclick;
+  secondBtn.textContent = '丢弃录音';
+  const restoreSecondBtn = () => {
+    secondBtn.textContent = '改用上传文件';
+    secondBtn.onclick = origOnclick;
+  };
+  btn.onclick = () => {
+    // 主按钮"恢复并处理"也要还原 secondBtn，否则下次打开麦克风权限弹窗副按钮还是"丢弃录音"
+    restoreSecondBtn();
+    closeMicModal();
+    const file = new File([backup.blob], `会议录音_${new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' })}.${ext}`, { type: backup.mimeType });
+    // 不在这里清备份，handleFile 成功后由 complete 事件触发清理（失败可重试）
+    showMemoModal(ctx => handleFile(file, ctx));
+  };
+  secondBtn.onclick = () => {
+    clearBackupDB();
+    closeMicModal();
+    restoreSecondBtn();
+  };
+  modal.classList.add('show');
+})();
+</script>
+
+</body>
+</html>

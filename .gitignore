@@ -1,0 +1,15 @@
+node_modules/
+.env
+uploads/
+transcripts/
+.gstack/
+certs/
+*.pem
+.DS_Store
+.claude/worktrees/
+# 打包构建产物（cache 430MB / dist 827MB），只提交 packaging/ 下的脚本
+packaging/cache/
+packaging/dist/
+__pycache__/
+# 开发模式下数据目录就是项目根，纠错词表会写在这里（个人数据，不进仓库）
+/纠错词表.txt

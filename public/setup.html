@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>留声 · 首次设置</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: #f2f2f7;
+      color: #000;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 40px 16px 80px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container { max-width: 520px; width: 100%; }
+    .logo { text-align: center; margin-bottom: 32px; }
+    .logo h1 { font-size: 28px; font-weight: 800; }
+    .logo p { color: #8e8e93; font-size: 14px; margin-top: 4px; }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin-bottom: 16px;
+    }
+
+    .step { margin-bottom: 32px; }
+    .step:last-child { margin-bottom: 0; }
+    .step-header {
+      display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px;
+    }
+    .step-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #4f46e5; color: #fff; font-size: 15px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .step-text { flex: 1; }
+    .step-label { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .step-hint { font-size: 14px; color: #8e8e93; line-height: 1.6; }
+    .step-hint strong { color: #000; }
+
+    .download-btn {
+      display: block; width: 100%; padding: 16px;
+      background: #4f46e5; color: #fff; border: none; border-radius: 12px;
+      font-size: 17px; font-weight: 700; cursor: pointer;
+      text-align: center; text-decoration: none;
+      margin: 20px 0 8px; transition: background 0.15s;
+    }
+    .download-btn:hover { background: #4338ca; }
+
+    .go-btn {
+      display: block; width: 100%; padding: 16px;
+      background: #4f46e5; color: #fff; border: none; border-radius: 12px;
+      font-size: 17px; font-weight: 700; cursor: pointer;
+      text-align: center; text-decoration: none; transition: background 0.15s;
+    }
+    .go-btn:hover { background: #4338ca; }
+
+    .note {
+      background: #f2f2f7; border-radius: 10px; padding: 14px 16px;
+      font-size: 13px; color: #8e8e93; line-height: 1.6; margin-top: 16px;
+      text-align: center;
+    }
+
+    .tabs { display: none; gap: 0; margin-bottom: 20px; background: #e5e5ea; border-radius: 9px; padding: 2px; }
+    .tabs.show { display: flex; }
+    .tab {
+      flex: 1; padding: 8px; text-align: center; font-size: 13px; font-weight: 600;
+      border: none; background: transparent; border-radius: 7px; cursor: pointer; color: #8e8e93;
+    }
+    .tab.active { background: #fff; color: #000; box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+
+    .device-badge {
+      display: inline-block; background: #e5e5ea; color: #3c3c43;
+      padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 500;
+      margin-bottom: 16px;
+    }
+    .other-device { text-align: center; margin-top: 12px; }
+    .other-device a { color: #8e8e93; font-size: 13px; text-decoration: underline; cursor: pointer; }
+
+    .next-step-banner {
+      display: none; background: #eef2ff; border: 2px solid #4f46e5;
+      border-radius: 12px; padding: 16px 20px; margin: 16px 0 8px; text-align: center;
+    }
+    .next-step-banner .banner-title { font-size: 16px; font-weight: 700; color: #3730a3; margin-bottom: 6px; }
+    .next-step-banner .banner-hint { font-size: 14px; color: #3730a3; line-height: 1.5; }
+    .open-settings-btn {
+      display: none; width: 100%; padding: 14px;
+      background: #007aff; color: #fff; border: none; border-radius: 12px;
+      font-size: 16px; font-weight: 700; cursor: pointer;
+      text-align: center; text-decoration: none; margin-top: 12px;
+    }
+
+    /* ===== iOS 高仿真组件 ===== */
+
+    /* iOS 屏幕容器 */
+    .ios-screen {
+      margin: 10px 0 0;
+      border-radius: 20px;
+      overflow: visible;
+      background: #f2f2f7;
+      border: 1px solid #d1d1d6;
+      position: relative;
+    }
+    /* iOS 导航栏 */
+    .ios-navbar {
+      background: #f2f2f7;
+      padding: 12px 16px;
+      display: flex; align-items: center;
+      position: relative;
+      border-bottom: 0.5px solid #c6c6c8;
+    }
+    .ios-navbar .nav-back {
+      color: #007aff; font-size: 22px; font-weight: 300; line-height: 1;
+      margin-right: 4px; cursor: default;
+    }
+    .ios-navbar .nav-title {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      font-size: 17px; font-weight: 600; color: #000;
+    }
+    /* iOS 分组列表 */
+    .ios-group {
+      margin: 8px 16px;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .ios-group.no-margin { margin: 0 16px 8px; }
+    .ios-row {
+      display: flex; align-items: center;
+      padding: 11px 16px 11px 12px;
+      min-height: 44px;
+      position: relative;
+      font-size: 17px;
+      color: #000;
+    }
+    .ios-row + .ios-row {
+      border-top: 0.5px solid #c6c6c8;
+      margin-left: 0;
+    }
+    /* 带图标行的分隔线从图标后开始 */
+    .ios-row.has-icon + .ios-row.has-icon { margin-left: 54px; padding-left: 0; border-top: 0.5px solid #c6c6c8; }
+    .ios-row .row-icon {
+      width: 29px; height: 29px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; margin-right: 12px; flex-shrink: 0;
+      color: #fff;
+    }
+    .ios-row .row-label { flex: 1; font-size: 17px; }
+    .ios-row .row-detail { color: #8e8e93; font-size: 17px; margin-right: 6px; }
+    .ios-row .row-chevron {
+      color: #c7c7cc; font-size: 14px; font-weight: 600;
+    }
+    .ios-row .row-chevron::after { content: '\203A'; }
+    /* iOS 分组标题 */
+    .ios-section-header {
+      padding: 6px 16px 6px 32px;
+      font-size: 13px; color: #6d6d72;
+      text-transform: uppercase;
+      letter-spacing: -0.08px;
+    }
+    /* 蓝色文字行 */
+    .ios-row .row-link { color: #007aff; font-size: 17px; }
+    /* 红色文字行 */
+    .ios-row .row-red { color: #ff3b30; font-size: 17px; }
+    /* iOS 开关 */
+    .ios-toggle {
+      width: 51px; height: 31px; border-radius: 15.5px;
+      position: relative; flex-shrink: 0;
+    }
+    .ios-toggle.on { background: #34c759; }
+    .ios-toggle.off { background: #e5e5ea; }
+    .ios-toggle::after {
+      content: ''; position: absolute; top: 2px;
+      width: 27px; height: 27px; border-radius: 50%;
+      background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .ios-toggle.on::after { right: 2px; }
+    .ios-toggle.off::after { left: 2px; }
+
+    /* ===== iOS 弹窗 / Action Sheet ===== */
+    .ios-alert-wrapper {
+      margin: 10px 0 0;
+      background: rgba(0,0,0,0.4);
+      border-radius: 20px;
+      padding: 60px 20px 60px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .ios-alert {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 14px;
+      width: 100%; max-width: 300px;
+      overflow: hidden;
+      text-align: center;
+    }
+    .ios-alert .alert-body {
+      padding: 20px 16px 0;
+    }
+    .ios-alert .alert-title {
+      font-size: 17px; font-weight: 600; margin-bottom: 4px; line-height: 1.3;
+    }
+    .ios-alert .alert-message {
+      font-size: 13px; color: #3c3c43; line-height: 1.4; padding: 0 4px;
+    }
+    .ios-alert .alert-actions {
+      display: flex; margin-top: 16px;
+      border-top: 0.5px solid #3c3c4349;
+    }
+    .ios-alert .alert-btn {
+      flex: 1; padding: 12px 8px;
+      font-size: 17px; color: #007aff;
+      text-align: center; cursor: default;
+    }
+    .ios-alert .alert-btn + .alert-btn {
+      border-left: 0.5px solid #3c3c4349;
+    }
+    .ios-alert .alert-btn.bold { font-weight: 600; }
+
+    /* iOS Action Sheet */
+    .ios-sheet-wrapper {
+      margin: 10px 0 0;
+      background: rgba(0,0,0,0.4);
+      border-radius: 20px;
+      padding: 80px 16px 24px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-end;
+    }
+    .ios-sheet {
+      width: 100%; max-width: 340px;
+    }
+    .ios-sheet .sheet-group {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .ios-sheet .sheet-header {
+      padding: 14px 16px 10px;
+      text-align: center;
+      border-bottom: 0.5px solid #3c3c4349;
+    }
+    .ios-sheet .sheet-header-title {
+      font-size: 13px; font-weight: 600; color: #8e8e93;
+    }
+    .ios-sheet .sheet-header-msg {
+      font-size: 13px; color: #8e8e93; margin-top: 2px;
+    }
+    .ios-sheet .sheet-btn {
+      padding: 14px 16px;
+      text-align: center; font-size: 20px; color: #007aff;
+      cursor: default;
+    }
+    .ios-sheet .sheet-btn + .sheet-btn {
+      border-top: 0.5px solid #3c3c4349;
+    }
+    .ios-sheet .sheet-cancel {
+      background: rgba(255,255,255,0.98);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 14px;
+      padding: 14px 16px;
+      text-align: center; font-size: 20px; font-weight: 600;
+      color: #007aff; cursor: default;
+    }
+
+    /* ===== Safari 错误页 ===== */
+    .ios-safari-error {
+      margin: 10px 0 0;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #f2f2f7;
+      border: 1px solid #d1d1d6;
+    }
+    .safari-error-body {
+      padding: 60px 24px 40px;
+      text-align: center;
+    }
+    .safari-error-icon {
+      width: 56px; height: 56px; margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .safari-error-icon svg { width: 56px; height: 56px; }
+    .safari-error-title {
+      font-size: 21px; font-weight: 700; color: #000; margin-bottom: 10px;
+    }
+    .safari-error-msg {
+      font-size: 14px; color: #3c3c43; line-height: 1.5; margin-bottom: 20px;
+    }
+    .safari-error-links {
+      display: flex; gap: 24px; justify-content: center;
+    }
+    .safari-error-links a {
+      font-size: 17px; color: #007aff; text-decoration: none; cursor: default;
+    }
+    .safari-bottom-bar {
+      display: flex; align-items: center; justify-content: space-around;
+      padding: 8px 16px 12px; background: #f9f9f9;
+      border-top: 0.5px solid #c6c6c8;
+    }
+    .safari-bottom-bar .bar-item {
+      font-size: 13px; color: #8e8e93;
+    }
+    .safari-bottom-bar .bar-url {
+      background: #e5e5ea; border-radius: 10px; padding: 6px 16px;
+      font-size: 14px; color: #3c3c43; flex: 1; margin: 0 12px; text-align: center;
+    }
+
+    /* ===== 引导箭头 ===== */
+    .guide-arrow {
+      display: flex; align-items: center; justify-content: center;
+      padding: 8px 0; position: relative;
+    }
+    .guide-arrow svg { width: 24px; height: 40px; }
+    .guide-arrow .arrow-label {
+      font-size: 13px; color: #ff3b30; font-weight: 600;
+      margin-left: 6px;
+    }
+    /* 行内箭头标注 */
+    .inline-arrow {
+      position: absolute; display: flex; align-items: center; gap: 2px;
+      z-index: 10;
+    }
+    .inline-arrow svg { width: 28px; height: 20px; flex-shrink: 0; }
+    .inline-arrow .arrow-text {
+      font-size: 12px; font-weight: 700; color: #ff3b30;
+      white-space: nowrap;
+    }
+    /* 高亮行 */
+    .ios-row.hl {
+      background: #fff3f0;
+      position: relative;
+    }
+    .ios-row.hl::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      background: #ff3b30; border-radius: 0 2px 2px 0;
+    }
+
+    /* Mac 风格 */
+    .mock-mac {
+      margin: 8px 0 0; background: #ececec; border-radius: 8px; overflow: hidden;
+      border: 1px solid #d1d1d6;
+    }
+    .mock-mac-titlebar {
+      background: linear-gradient(180deg, #e8e8e8 0%, #d0d0d0 100%);
+      padding: 6px 12px; display: flex; align-items: center; gap: 6px;
+      border-bottom: 1px solid #b8b8b8;
+    }
+    .mock-mac-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .mock-mac-dot.red { background: #ff5f57; }
+    .mock-mac-dot.yellow { background: #febc2e; }
+    .mock-mac-dot.green { background: #28c840; }
+    .mock-mac-titlebar .title { flex: 1; text-align: center; font-size: 12px; font-weight: 600; color: #333; }
+    .mock-mac-body { padding: 16px; background: #fff; }
+    .mock-mac-row {
+      display: flex; align-items: center; padding: 8px 12px;
+      border-bottom: 1px solid #f0f0f0; font-size: 13px;
+    }
+    .mock-mac-row .row-label { flex: 1; }
+    .mock-mac-select {
+      background: #fff; border: 1px solid #ccc; border-radius: 4px;
+      padding: 4px 24px 4px 8px; font-size: 12px; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='8' height='5' viewBox='0 0 8 5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 5L0 0h8z' fill='%23666'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 8px center;
+    }
+    .mock-mac-row.highlight {
+      background: #eef2ff; border: 2px solid #4f46e5; border-radius: 6px;
+      margin: 4px 0; position: relative;
+    }
+    .mock-mac-row.highlight::after {
+      content: '\1f448 \6539\8fd9\91cc';
+      position: absolute; right: -4px; top: 50%; transform: translateY(-50%);
+      background: #4f46e5; color: #fff; font-size: 11px; font-weight: 600;
+      padding: 3px 8px; border-radius: 4px; white-space: nowrap;
+    }
+    .arrow-hint {
+      text-align: center; padding: 6px 0;
+      font-size: 12px; color: #4f46e5; font-weight: 500;
+    }
+    .arrow-hint::before { content: '\2193 '; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="logo">
+    <h1>留声</h1>
+    <p>说完即整理</p>
+  </div>
+
+  <div class="card">
+    <div style="text-align:center; margin-bottom:8px;">
+      <div style="font-size:20px; font-weight:700;">首次使用，30 秒设置</div>
+      <div style="font-size:14px; color:#888; margin-top:4px;">安装证书后即可使用，只需一次</div>
+    </div>
+
+    <a class="download-btn" href="/rootCA.pem" id="downloadBtn" onclick="onDownloadClicked()">
+      下载并安装证书
+    </a>
+
+    <div class="next-step-banner" id="nextStepBanner">
+      <div class="banner-title" id="bannerTitle"></div>
+      <div class="banner-hint" id="bannerHint"></div>
+      <a class="open-settings-btn" id="openSettingsBtn" href="App-Prefs:root=General&path=ManagedConfigurationList">打开「设置」App →</a>
+    </div>
+  </div>
+
+  <div class="card" id="stepsCard">
+    <div id="deviceBadge" class="device-badge"></div>
+    <div class="tabs" id="tabsBar">
+      <button class="tab" data-tab="iphone" onclick="switchTab('iphone')">iPhone</button>
+      <button class="tab" data-tab="mac" onclick="switchTab('mac')">Mac</button>
+      <button class="tab" data-tab="windows" onclick="switchTab('windows')">Windows</button>
+    </div>
+
+    <!-- ==================== iPhone 步骤 ==================== -->
+    <div id="steps-iphone" class="steps-panel" style="display:none;">
+
+      <!-- ======= iPhone 步骤 1：下载证书 ======= -->
+      <div class="step">
+        <div class="step-header">
+          <span class="step-num">1</span>
+          <div class="step-text">
+            <div class="step-label">点击上方按钮下载证书</div>
+            <div class="step-hint">Safari 会弹出<strong>两个提示</strong>，都点「允许」</div>
+          </div>
+        </div>
+
+        <!-- 弹窗 1：Safari 权限确认 -->
+        <div class="ios-alert-wrapper">
+          <div class="ios-alert">
+            <div class="alert-body">
+              <div class="alert-message" style="font-size:16px; color:#000; text-align:left; line-height:1.45;">
+                "<span class="dynamic-host"></span>"正尝试下载配置描述文件。<br>要允许吗？
+              </div>
+            </div>
+            <div class="alert-actions">
+              <div class="alert-btn">忽略</div>
+              <div class="alert-btn bold" style="position:relative;">
+                允许
+                <!-- 红色箭头标注 -->
+                <svg style="position:absolute;left:50%;bottom:-30px;transform:translateX(-50%) rotate(180deg);" width="20" height="28" viewBox="0 0 20 28" fill="none"><path d="M10 0 L10 20" stroke="#ff3b30" stroke-width="2.5" stroke-linecap="round"/><path d="M4 14 L10 22 L16 14" stroke="#ff3b30" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                <span style="position:absolute;left:50%;bottom:-52px;transform:translateX(-50%);font-size:12px;font-weight:700;color:#ff3b30;white-space:nowrap;">点这个</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 引导箭头：连接两个弹窗 -->
+        <div class="guide-arrow">
+          <svg width="24" height="40" viewBox="0 0 24 40" fill="none">
+            <path d="M12 2 L12 30" stroke="#ff3b30" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 4"/>
+            <path d="M6 24 L12 34 L18 24" stroke="#ff3b30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+          <span class="arrow-label">紧接着弹出第二个弹窗</span>
+        </div>
+
+        <!-- 弹窗 2：选取设备（Action Sheet 风格） -->
+        <div class="ios-sheet-wrapper">
+          <div class="ios-sheet">
+            <div class="sheet-group">
+              <div class="sheet-header">
+                <div class="sheet-header-title">选取设备</div>
+                <div class="sheet-header-msg">你想在哪个设备上安装此描述文件？</div>
+              </div>
+              <div class="sheet-btn" style="position:relative;">
+                iPhone
+                <!-- 红色箭头标注 -->
+                <svg style="position:absolute;right:16px;top:50%;transform:translateY(-50%);" width="60" height="24" viewBox="0 0 60 24" fill="none">
+                  <path d="M58 12 L20 12" stroke="#ff3b30" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M26 6 L18 12 L26 18" stroke="#ff3b30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </div>
+              <div class="sheet-btn" style="color:#8e8e93;">其他设备...</div>
+            </div>
+            <div class="sheet-cancel">取消</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======= iPhone 步骤 2：安装描述文件 ======= -->
+      <div class="step">
+        <div class="step-header">
+          <span class="step-num">2</span>
+          <div class="step-text">
+            <div class="step-label">去「设置」安装描述文件</div>
+            <div class="step-hint">设置 → 通用 → <strong>VPN 与设备管理</strong></div>
+          </div>
+        </div>
+
+        <!-- 设置 → 通用 页面 -->
+        <div class="ios-screen">
+          <div class="ios-navbar">
+            <span class="nav-back">&lsaquo;</span>
+            <span class="nav-title">通用</span>
+          </div>
+          <!-- 第一组 -->
+          <div class="ios-group" style="margin-top:12px;">
+            <div class="ios-row has-icon">
+              <div class="row-icon" style="background:#8e8e93;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><rect x="2" y="4" width="20" height="16" rx="2" stroke="white" stroke-width="2" fill="none"/><path d="M2 8h20" stroke="white" stroke-width="2"/><rect x="4" y="12" width="4" height="3" rx="0.5" fill="white"/></svg>
+              </div>
+              <span class="row-label">键盘</span>
+              <span class="row-chevron"></span>
+            </div>
+            <div class="ios-row has-icon">
+              <div class="row-icon" style="background:#007aff;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="10" stroke="white" stroke-width="2" fill="none"/><path d="M12 6v6l4 2" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+              </div>
+              <span class="row-label">日期与时间</span>
+              <span class="row-chevron"></span>
+            </div>
+            <div class="ios-row has-icon">
+              <div class="row-icon" style="background:#007aff;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="10" stroke="white" stroke-width="2" fill="none"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10A15.3 15.3 0 0 1 12 2z" stroke="white" stroke-width="1.5" fill="none"/></svg>
+              </div>
+              <span class="row-label">语言与地区</span>
+              <span class="row-chevron"></span>
+            </div>
+            <div class="ios-row has-icon">
+              <div class="row-icon" style="background:#007aff;">
+                <span style="font-size:14px; font-weight:700;">Aa</span>
+              </div>
+              <span class="row-label">字体</span>
+              <span class="row-chevron"></span>
+            </div>
+            <div class="ios-row has-icon">
+              <div class="row-icon" style="background:#007aff;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><rect x="6" y="3" width="12" height="18" rx="2" stroke="white" stroke-width="2" fill="none"/><circle cx="12" cy="16" r="2" fill="white"/></svg>
+              </div>
+              <span class="row-label">自动填充与密码</span>
+              <span class="row-chevron"></span>
+            </div>
+          </div>
+          <!-- 第二组 -->
+          <div class="ios-group">
+            <div class="ios-row has-icon">
+              <div class="row-icon" style="background:#34c759;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><rect x="3" y="5" width="18" height="14" rx="2" stroke="white" stroke-width="2" fill="none"/><path d="M7 15l3-4 2 2 4-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+              </div>
+              <span class="row-label">电视提供商</span>
+              <span class="row-chevron"></span>
+            </div>
+          </div>
+          <!-- 第三组：VPN 与设备管理（高亮） -->
+          <div class="ios-group" style="position:relative;">
+            <div class="ios-row has-icon hl">
+              <div class="row-icon" style="background:#007aff;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="9" stroke="white" stroke-width="2" fill="none"/><path d="M12 7v4l3 2" stroke="white" stroke-width="2" stroke-linecap="round"/><path d="M6 18l-2 3M18 18l2 3" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+              <span class="row-label" style="font-weight:500;">VPN 与设备管理</span>
+              <span class="row-chevron"></span>
+            </div>
+            <!-- 红色箭头标注 -->
+            <div style="text-align:right; padding:4px 12px 0; font-size:12px; font-weight:700; color:#ff3b30;">
+              <svg width="20" height="16" viewBox="0 0 20 16" fill="none" style="vertical-align:middle; margin-right:2px;">
+                <path d="M18 8 L4 8" stroke="#ff3b30" stroke-width="2" stroke-linecap="round"/>
+                <path d="M9 3 L3 8 L9 13" stroke="#ff3b30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              </svg>
+              点这里
+            </div>
+          </div>
+          <!-- 第四组 -->
+          <div class="ios-group">
+            <div class="ios-row has-icon">
+              <div class="row-icon" style="background:#007aff;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><rect x="4" y="3" width="16" height="18" rx="2" stroke="white" stroke-width="2" fill="none"/><path d="M8 8h8M8 12h8M8 16h4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+              <span class="row-label">法律与监管</span>
+              <span class="row-chevron"></span>
+            </div>
+          </div>
+          <div class="ios-group">
+            <div class="ios-row has-icon">
+              <div class="row-icon" style="background:#34c759;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M4 12a8 8 0 0 1 16 0" stroke="white" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M12 12l-4 4M12 12l4 4" stroke="white" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="2" fill="white"/></svg>
+              </div>
+              <span class="row-label">传输或还原 iPhone</span>
+              <span class="row-chevron"></span>
+            </div>
+          </div>
+          <!-- 关机 -->
+          <div class="ios-group" style="margin-bottom:16px;">
+            <div class="ios-row">
+              <span class="row-red" style="width:100%; text-align:left;">关机</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 引导箭头 -->
+        <div class="guide-arrow">
+          <svg width="24" height="40" viewBox="0 0 24 40" fill="none">
+            <path d="M12 2 L12 30" stroke="#ff3b30" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 4"/>
+            <path d="M6 24 L12 34 L18 24" stroke="#ff3b30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+          <span class="arrow-label">点进去后</span>
+        </div>
+
+        <!-- VPN 与设备管理 页面 -->
+        <div class="ios-screen">
+          <div class="ios-navbar">
+            <span class="nav-back">&lsaquo;</span>
+            <span class="nav-title">VPN 与设备管理</span>
+          </div>
+          <!-- VPN 行 -->
+          <div class="ios-group" style="margin-top:12px;">
+            <div class="ios-row has-icon">
+              <div class="row-icon" style="background:#007aff;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="9" stroke="white" stroke-width="2" fill="none"/><circle cx="12" cy="12" r="3" fill="white"/></svg>
+              </div>
+              <span class="row-label">VPN</span>
+              <span class="row-detail">已连接</span>
+              <span class="row-chevron"></span>
+            </div>
+          </div>
+          <!-- 登录 -->
+          <div class="ios-group">
+            <div class="ios-row">
+              <span class="row-link">登录工作或学校账户 ...</span>
+            </div>
+          </div>
+          <!-- 已下载的描述文件 -->
+          <div class="ios-section-header">已下载的描述文件</div>
+          <div class="ios-group no-margin" style="position:relative;">
+            <div class="ios-row has-icon hl">
+              <div class="row-icon" style="background:#8e8e93;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="5" fill="white"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+              <div class="row-label">
+                <div class="ca-name-main" style="font-size:17px; font-weight:400;">mkcert 开头的那一项</div>
+                <div class="ca-name-suffix" style="font-size:14px; color:#8e8e93;"></div>
+              </div>
+              <span class="row-chevron"></span>
+            </div>
+            <!-- 红色箭头标注 -->
+            <div style="text-align:right; padding:4px 12px 0; font-size:12px; font-weight:700; color:#ff3b30;">
+              <svg width="20" height="16" viewBox="0 0 20 16" fill="none" style="vertical-align:middle; margin-right:2px;">
+                <path d="M18 8 L4 8" stroke="#ff3b30" stroke-width="2" stroke-linecap="round"/>
+                <path d="M9 3 L3 8 L9 13" stroke="#ff3b30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              </svg>
+              点这里
+            </div>
+          </div>
+          <div style="height:80px;"></div>
+        </div>
+
+        <div style="text-align:center; padding:10px 0 0; font-size:13px; color:#ff3b30; font-weight:600;">
+          点进去后，点右上角蓝色「安装」按钮
+        </div>
+      </div>
+
+      <!-- ======= iPhone 步骤 3：信任证书 ======= -->
+      <div class="step">
+        <div class="step-header">
+          <span class="step-num">3</span>
+          <div class="step-text">
+            <div class="step-label">信任证书</div>
+            <div class="step-hint">设置 → 通用 → 关于本机 → <strong>证书信任设置</strong></div>
+          </div>
+        </div>
+
+        <div class="ios-screen">
+          <div class="ios-navbar">
+            <span class="nav-back">&lsaquo;</span>
+            <span class="nav-title">证书信任设置</span>
+          </div>
+          <div class="ios-section-header" style="padding-top:12px; text-transform:none; font-size:14px; color:#6d6d72; line-height:1.5;">
+            针对根证书启用完全信任
+          </div>
+          <div class="ios-group no-margin" style="position:relative;">
+            <div class="ios-row hl">
+              <span class="row-label ca-name-main" style="font-size:15px;">mkcert 开头的那一项</span>
+              <div class="ios-toggle off"></div>
+            </div>
+            <!-- 红色箭头标注 -->
+            <div style="text-align:right; padding:4px 12px 0; font-size:12px; font-weight:700; color:#ff3b30;">
+              <svg width="20" height="16" viewBox="0 0 20 16" fill="none" style="vertical-align:middle; margin-right:2px;">
+                <path d="M18 8 L4 8" stroke="#ff3b30" stroke-width="2" stroke-linecap="round"/>
+                <path d="M9 3 L3 8 L9 13" stroke="#ff3b30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              </svg>
+              打开这个开关
+            </div>
+          </div>
+          <div style="padding:12px 32px; font-size:13px; color:#8e8e93; line-height:1.5;">
+            打开开关后弹窗点「继续」即可
+          </div>
+          <div style="height:60px;"></div>
+        </div>
+      </div>
+
+      <!-- ======= 常见问题：此连接非私人连接 ======= -->
+      <div class="step">
+        <div class="step-header">
+          <span class="step-num" style="background:#ff3b30;">!</span>
+          <div class="step-text">
+            <div class="step-label">如果看到「此连接非私人连接」</div>
+            <div class="step-hint">说明<strong>第 3 步没做</strong>——回去打开证书信任开关</div>
+          </div>
+        </div>
+
+        <div class="ios-safari-error">
+          <div class="safari-error-body">
+            <!-- 红色断裂锁 SVG -->
+            <div class="safari-error-icon">
+              <svg viewBox="0 0 56 56" fill="none">
+                <path d="M20 24V18a8 8 0 0 1 16 0v6" stroke="#ff3b30" stroke-width="3" stroke-linecap="round"/>
+                <rect x="14" y="24" width="28" height="22" rx="4" stroke="#ff3b30" stroke-width="3" fill="none"/>
+                <path d="M28 33v6" stroke="#ff3b30" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="28" cy="33" r="2" fill="#ff3b30"/>
+                <!-- 断裂线 -->
+                <path d="M8 8l40 40" stroke="#ff3b30" stroke-width="3" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="safari-error-title">此连接非私人连接</div>
+            <div class="safari-error-msg">
+              此网站可能在冒充"<span class="dynamic-host"></span>"来窃取你的个人或财务信息。你应回到之前的页面。
+            </div>
+            <div class="safari-error-links">
+              <a>显示详细信息</a>
+              <a style="font-weight:600;">返回</a>
+            </div>
+          </div>
+          <div class="safari-bottom-bar">
+            <span class="bar-item">&lsaquo;</span>
+            <span class="bar-item" style="font-size:16px;">&#9633;</span>
+            <span class="bar-url dynamic-host"></span>
+            <span class="bar-item" style="font-size:16px;">&#8635;</span>
+            <span class="bar-item">&#8943;</span>
+          </div>
+        </div>
+
+        <div style="text-align:center; padding:12px 0 0; font-size:14px; color:#ff3b30; font-weight:600;">
+          回到第 3 步打开信任开关即可解决
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== Mac 步骤 ==================== -->
+    <div id="steps-mac" class="steps-panel" style="display:none;">
+
+      <!-- Mac 步骤 1 -->
+      <div class="step">
+        <div class="step-header">
+          <span class="step-num">1</span>
+          <div class="step-text">
+            <div class="step-label">点击上方按钮下载证书</div>
+            <div class="step-hint">文件会保存到「下载」文件夹，<strong>双击打开它</strong></div>
+          </div>
+        </div>
+        <div class="mock mock-mac">
+          <div class="mock-mac-titlebar">
+            <div class="mock-mac-dot red"></div>
+            <div class="mock-mac-dot yellow"></div>
+            <div class="mock-mac-dot green"></div>
+            <div class="title">Finder — 下载</div>
+          </div>
+          <div class="mock-mac-body" style="padding:12px 16px;">
+            <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; background:#eef2ff; border:2px solid #4f46e5; border-radius:8px;">
+              <div style="font-size:28px;">📄</div>
+              <div>
+                <div style="font-size:13px; font-weight:600;">liusheng-ca.pem</div>
+                <div style="font-size:11px; color:#888;">安全证书 — 刚刚下载</div>
+              </div>
+              <div style="margin-left:auto; font-size:11px; color:#4f46e5; font-weight:600;">双击打开 👈</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mac 步骤 2 -->
+      <div class="step">
+        <div class="step-header">
+          <span class="step-num">2</span>
+          <div class="step-text">
+            <div class="step-label">在钥匙串中设置信任</div>
+            <div class="step-hint">「钥匙串访问」自动打开，找到证书<strong>双击它</strong></div>
+          </div>
+        </div>
+        <div class="mock mock-mac">
+          <div class="mock-mac-titlebar">
+            <div class="mock-mac-dot red"></div>
+            <div class="mock-mac-dot yellow"></div>
+            <div class="mock-mac-dot green"></div>
+            <div class="title">钥匙串访问</div>
+          </div>
+          <div class="mock-mac-body" style="padding:12px;">
+            <div style="font-size:12px; color:#888; margin-bottom:8px;">系统 → 证书</div>
+            <div style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:#eef2ff; border:2px solid #4f46e5; border-radius:6px; margin-bottom:12px; position:relative;">
+              <div style="font-size:18px;">🔒</div>
+              <div style="font-size:13px; font-weight:500;">liusheng-ca</div>
+              <div style="margin-left:auto; font-size:11px; color:#4f46e5; font-weight:600;">双击 👈</div>
+            </div>
+            <div class="arrow-hint">双击后弹出详情窗口 ↓</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mac 步骤 3 -->
+      <div class="step">
+        <div class="step-header">
+          <span class="step-num">3</span>
+          <div class="step-text">
+            <div class="step-label">展开「信任」→ 选「始终信任」</div>
+            <div class="step-hint">关闭窗口时输入密码确认</div>
+          </div>
+        </div>
+        <div class="mock mock-mac">
+          <div class="mock-mac-titlebar">
+            <div class="mock-mac-dot red"></div>
+            <div class="mock-mac-dot yellow"></div>
+            <div class="mock-mac-dot green"></div>
+            <div class="title">liusheng-ca</div>
+          </div>
+          <div class="mock-mac-body" style="padding:12px;">
+            <div style="font-size:13px; font-weight:600; margin-bottom:10px;">▼ 信任</div>
+            <div class="mock-mac-row highlight">
+              <div class="row-label">使用此证书时</div>
+              <select class="mock-mac-select" disabled>
+                <option>始终信任</option>
+              </select>
+            </div>
+            <div class="mock-mac-row">
+              <div class="row-label">安全套接字层 (SSL)</div>
+              <select class="mock-mac-select" disabled>
+                <option>始终信任</option>
+              </select>
+            </div>
+            <div style="text-align:center; margin-top:12px;">
+              <div style="display:inline-block; padding:6px 20px; background:#4f46e5; color:#fff; border-radius:6px; font-size:13px; font-weight:600;">关闭窗口 → 输入密码确认</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== Windows 步骤 ==================== -->
+    <div id="steps-windows" class="steps-panel" style="display:none;">
+
+      <!-- Windows 步骤 1 -->
+      <div class="step">
+        <div class="step-header">
+          <span class="step-num">1</span>
+          <div class="step-text">
+            <div class="step-label">点击上方按钮下载证书</div>
+            <div class="step-hint">浏览器会下载一个 <strong>.crt</strong> 证书文件</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Windows 步骤 2 -->
+      <div class="step">
+        <div class="step-header">
+          <span class="step-num">2</span>
+          <div class="step-text">
+            <div class="step-label">双击证书文件，点「安装证书」</div>
+            <div class="step-hint">在下载文件夹找到 <strong>rootCA.crt</strong>，双击打开</div>
+          </div>
+        </div>
+        <div class="mock mock-mac">
+          <div class="mock-mac-titlebar">
+            <div class="mock-mac-dot red"></div>
+            <div class="mock-mac-dot yellow"></div>
+            <div class="mock-mac-dot green"></div>
+            <div class="title">证书信息</div>
+          </div>
+          <div class="mock-mac-body" style="padding:16px;">
+            <div style="text-align:center; margin-bottom:12px;">
+              <div style="font-size:36px;">🔒</div>
+              <div style="font-size:14px; font-weight:600; margin-top:4px;">mkcert 根证书</div>
+              <div style="font-size:12px; color:#888;">颁发者: mkcert</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="display:inline-block; padding:8px 24px; background:#4f46e5; color:#fff; border-radius:6px; font-size:14px; font-weight:600;">安装证书(I)... 👈 点这个</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Windows 步骤 3 -->
+      <div class="step">
+        <div class="step-header">
+          <span class="step-num">3</span>
+          <div class="step-text">
+            <div class="step-label">选择「当前用户」，点下一步</div>
+            <div class="step-hint">证书导入向导会自动打开</div>
+          </div>
+        </div>
+        <div class="mock mock-mac">
+          <div class="mock-mac-titlebar">
+            <div class="mock-mac-dot red"></div>
+            <div class="mock-mac-dot yellow"></div>
+            <div class="mock-mac-dot green"></div>
+            <div class="title">证书导入向导</div>
+          </div>
+          <div class="mock-mac-body" style="padding:16px;">
+            <div style="font-size:13px; margin-bottom:12px;">存储位置</div>
+            <div style="padding:8px 12px; background:#eef2ff; border:2px solid #4f46e5; border-radius:6px; margin-bottom:6px; font-size:13px; display:flex; align-items:center; gap:8px;">
+              <span style="font-size:16px;">◉</span> <strong>当前用户(C)</strong>
+              <span style="margin-left:auto; font-size:11px; color:#4f46e5; font-weight:600;">选这个 👈</span>
+            </div>
+            <div style="padding:8px 12px; font-size:13px; display:flex; align-items:center; gap:8px; color:#888;">
+              <span style="font-size:16px;">○</span> 本地计算机(L)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Windows 步骤 4 -->
+      <div class="step">
+        <div class="step-header">
+          <span class="step-num">4</span>
+          <div class="step-text">
+            <div class="step-label">选择「受信任的根证书颁发机构」</div>
+            <div class="step-hint">选「将所有的证书都放入下列存储」→ 浏览 → 选择此项</div>
+          </div>
+        </div>
+        <div class="mock mock-mac">
+          <div class="mock-mac-titlebar">
+            <div class="mock-mac-dot red"></div>
+            <div class="mock-mac-dot yellow"></div>
+            <div class="mock-mac-dot green"></div>
+            <div class="title">证书导入向导</div>
+          </div>
+          <div class="mock-mac-body" style="padding:16px;">
+            <div style="padding:8px 12px; font-size:13px; display:flex; align-items:center; gap:8px; color:#888; margin-bottom:6px;">
+              <span style="font-size:16px;">○</span> 自动选择证书存储
+            </div>
+            <div style="padding:8px 12px; background:#f8fafc; border-radius:6px; margin-bottom:8px; font-size:13px; display:flex; align-items:center; gap:8px;">
+              <span style="font-size:16px;">◉</span> <strong>将所有的证书都放入下列存储</strong>
+            </div>
+            <div style="padding:10px 12px; background:#eef2ff; border:2px solid #4f46e5; border-radius:6px; font-size:13px; display:flex; align-items:center; gap:8px;">
+              <span>📁</span> <strong>受信任的根证书颁发机构</strong>
+              <span style="margin-left:auto; font-size:11px; color:#4f46e5; font-weight:600;">选这个 👈</span>
+            </div>
+            <div style="text-align:center; margin-top:12px;">
+              <div style="display:inline-block; padding:6px 20px; background:#4f46e5; color:#fff; border-radius:6px; font-size:13px; font-weight:600;">下一步 → 完成</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Windows 步骤 5 -->
+      <div class="step">
+        <div class="step-header">
+          <span class="step-num">5</span>
+          <div class="step-text">
+            <div class="step-label">确认安装，完成！</div>
+            <div class="step-hint">弹出安全警告点「是」→ 导入成功。<strong>重启浏览器</strong>后生效</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="other-device" id="otherDevice">
+      <a onclick="showAllTabs()">其他设备？</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <a class="go-btn" id="goBtn" href="#">
+      设置完成，开始使用 →
+    </a>
+    <div class="note">
+      <strong style="color:#0f172a;">🔒 数据安全声明</strong><br>
+      录音文件仅在公司内网本地处理，不上传任何第三方服务器。<br>
+      语音识别在本机完成，纪要生成使用公司自有 AI 服务。<br>
+      证书仅用于信任公司内部 HTTPS 服务，不影响其他网站。
+    </div>
+  </div>
+</div>
+
+<script>
+const ua = navigator.userAgent;
+let device = 'mac';
+if (/iPhone|iPad|iPod/.test(ua)) device = 'iphone';
+else if (/Android/.test(ua)) device = 'iphone'; // Android 用户看 iPhone 教程也能参考
+else if (/Mac/.test(ua)) device = 'mac';
+else if (/Win/.test(ua)) device = 'windows';
+
+const deviceNames = { iphone: 'iPhone', mac: 'Mac', windows: 'Windows' };
+
+const badge = document.getElementById('deviceBadge');
+badge.textContent = '已识别：' + deviceNames[device];
+
+document.getElementById(`steps-${device}`).style.display = 'block';
+
+function switchTab(name) {
+  document.querySelectorAll('.steps-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`steps-${name}`).style.display = 'block';
+  document.querySelector(`[data-tab="${name}"]`).classList.add('active');
+}
+
+function showAllTabs() {
+  const tabs = document.getElementById('tabsBar');
+  tabs.classList.add('show');
+  switchTab(device);
+  document.querySelector(`[data-tab="${device}"]`).classList.add('active');
+  document.getElementById('otherDevice').style.display = 'none';
+  document.getElementById('deviceBadge').style.display = 'none';
+}
+
+function onDownloadClicked() {
+  const banner = document.getElementById('nextStepBanner');
+  const title = document.getElementById('bannerTitle');
+  const hint = document.getElementById('bannerHint');
+  const settingsBtn = document.getElementById('openSettingsBtn');
+
+  if (device === 'iphone') {
+    title.textContent = '已下载！接下来去「设置」安装';
+    hint.innerHTML = '打开<strong>「设置」App</strong>，顶部会出现「已下载描述文件」提示';
+    settingsBtn.style.display = 'block';
+  } else if (device === 'windows') {
+    title.textContent = '已下载！双击证书文件安装';
+    hint.innerHTML = '在下载文件夹找到 <strong>rootCA.crt</strong>，双击打开 → 点「安装证书」';
+  } else {
+    title.textContent = '已下载！双击证书文件安装';
+    hint.innerHTML = '在「下载」文件夹找到 <strong>liusheng-ca.pem</strong>，双击打开';
+  }
+
+  banner.style.display = 'block';
+  setTimeout(() => {
+    banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 300);
+}
+
+const httpsUrl = `https://${location.hostname}:3443`;
+document.getElementById('goBtn').href = httpsUrl;
+
+// 动态填充当前 hostname
+const host = location.hostname;
+document.querySelectorAll('.dynamic-host').forEach(el => {
+  // HTML 里已写好引号（如果需要），脚本只填裸 hostname
+  el.textContent = host;
+});
+
+// Windows 用户改用 .crt 下载链接
+if (device === 'windows') {
+  document.getElementById('downloadBtn').href = '/rootCA.crt';
+}
+
+// 证书名每台电脑都不一样（mkcert 按「用户@主机名」命名），从服务端读真实名字填进 iPhone 图示；
+// 读不到就保留「mkcert 开头的那一项」这句通用说法
+fetch('/ca-name')
+  .then(r => (r.ok ? r.json() : null))
+  .then(info => {
+    if (!info || !info.main) return;
+    document.querySelectorAll('.ca-name-main').forEach(el => { el.textContent = info.main; });
+    document.querySelectorAll('.ca-name-suffix').forEach(el => { el.textContent = info.suffix; });
+  })
+  .catch(() => {});
+</script>
+
+</body>
+</html>

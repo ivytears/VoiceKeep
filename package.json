@@ -1,0 +1,16 @@
+{
+  "name": "voicekeep",
+  "version": "1.0.0",
+  "description": "在 Mac 上把录音转成文字，全程本地、不联网",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1",
+    "opencc-js": "^1.0.5"
+  }
+}
