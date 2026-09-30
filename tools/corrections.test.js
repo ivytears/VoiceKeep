@@ -23,6 +23,7 @@ test('默认表修好实测认错的三个词（2026-09-23 真实录音）', () 
   assert.strictEqual(fix('大概是用Cloud Code，然后去重建了工作流'), '大概是用Claude Code，然后去重建了工作流');
   assert.strictEqual(fix('海外的GPT和Klod，尤其是美国的GPT和Klod'), '海外的GPT和Claude，尤其是美国的GPT和Claude');
   assert.strictEqual(fix('它肯定是GIMINAN，对吧？Gimilan自己会有'), '它肯定是Gemini，对吧？Gemini自己会有');
+  assert.strictEqual(fix('又拿Gemina的结果做对照'), '又拿Gemini的结果做对照');
 });
 
 test('英文不分大小写，词中间的空格可有可无', () => {

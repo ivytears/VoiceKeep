@@ -140,6 +140,18 @@ for w in "Cloud Code" Klod GIMINAN 乙方; do
 done
 ok "纠错词表生效：Cloud Code→Claude Code、Klod→Claude、GIMINAN→Gemini，现加的「乙方→对方」不重启就生效"
 
+# 词表面板的读写接口：GET 读回文件，PUT 原样保存并报坏行行号（第 6 行故意没有箭头）
+[[ "$(api "$BASE/api/corrections" | json_get text)" == *"Cloud Code => Claude Code"* ]] || die "GET /api/corrections 应返回词表内容"
+SAVE="$(api -X PUT -H 'Content-Type: application/json' \
+  -d '{"text":"Cloud Code => Claude Code\nKlod => Claude\nGIMINAN | Gimilan => Gemini\n乙方 => 对方\n甲方 => 客户\n坏行没有箭头\n"}' \
+  "$BASE/api/corrections")"
+[[ "$(printf '%s' "$SAVE" | json_get ok)" == "true" ]] || die "PUT /api/corrections 保存失败: $SAVE"
+[[ "$(printf '%s' "$SAVE" | json_get rules)" == "5" ]] || die "应报 5 条规则生效: $SAVE"
+[[ "$(printf '%s' "$SAVE" | json_get skipped)" == "[6]" ]] || die "应报第 6 行格式不对: $SAVE"
+[[ "$(api "$BASE/api/corrections" | json_get text)" == *"甲方 => 客户"* ]] || die "保存后再 GET 应读到新词表"
+[[ "$(http_code -X PUT -H 'Content-Type: application/json' -d '{"text":123}' "$BASE/api/corrections")" == "400" ]] || die "text 不是字符串应拒绝"
+ok "词表面板接口：GET 读回、PUT 原子保存、坏行报行号、非法请求 400"
+
 ID="$(basename "$REC" .json)"
 for probe in "POST /api/transcript/$ID/regenerate" "PUT /api/transcript/$ID/minutes" "GET /api/team"; do
   code="$(http_code -X "${probe%% *}" -H 'Content-Type: application/json' -d '{}' "$BASE${probe#* }")"

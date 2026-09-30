@@ -149,6 +149,42 @@
       font-size: 11px; font-weight: 500; letter-spacing: 0.04em;
       border: 1px solid var(--border);
     }
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+    .header-btn {
+      padding: 5px 14px; min-height: 30px;
+      border: 1px solid var(--border); border-radius: 20px;
+      background: transparent; color: var(--muted);
+      font: inherit; font-size: 11px; font-weight: 500; letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
+    }
+    .header-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .header-btn:active { transform: scale(0.97); }
+
+    /* 纠错词表面板 */
+    .corr-modal { max-width: 560px; text-align: left; }
+    .corr-quick { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .corr-quick input {
+      flex: 1; min-width: 0; padding: 9px 12px;
+      border: 1px solid var(--border); border-radius: 6px;
+      background: var(--bg); color: var(--text);
+      font: inherit; font-size: 13px; outline: none;
+      transition: border-color var(--duration-fast) var(--ease-out);
+    }
+    .corr-quick input:focus { border-color: var(--accent); }
+    .corr-quick .corr-arrow { color: var(--muted); flex-shrink: 0; }
+    .corr-quick .toolbar-btn { flex-shrink: 0; }
+    #corrText {
+      width: 100%; box-sizing: border-box; min-height: 220px; padding: 12px;
+      border: 1px solid var(--border); border-radius: 6px;
+      background: var(--bg); color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px; line-height: 1.8; resize: vertical; outline: none;
+    }
+    #corrText:focus { border-color: var(--accent); }
+    .corr-status { min-height: 20px; font-size: 12px; line-height: 1.6; margin: 8px 0 14px; color: var(--muted); }
+    .corr-status.ok { color: var(--green); }
+    .corr-status.warn { color: var(--red); }
 
     /* ────── Footer ────── */
     .tech-footer {
@@ -281,12 +317,7 @@
     .drop-release { display: none; color: var(--accent); }
     body.is-dragging .drop-zone .drop-title { display: none; }
     body.is-dragging .drop-zone .drop-release { display: block; }
-    .drop-hint { font-size: 13px; color: var(--text-secondary); margin-top: 10px; line-height: 1.7; }
-    .drop-hint span { display: inline-block; }   /* 窄屏只在两句之间换行 */
-    .drop-formats {
-      display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 14px;
-      font-size: 11px; color: var(--muted); margin-top: 20px; letter-spacing: 0.08em;
-    }
+    .drop-hint { font-size: 13px; color: var(--text-secondary); margin-top: 10px; letter-spacing: 0.02em; }
 
     /* 现场录音退成次要入口 */
     .record-link {
@@ -526,6 +557,7 @@
       .history-item .delete-btn { display: flex; }
       .content { padding: 20px 16px 0; }
       .landing { padding-top: 8vh; }
+      .header-badge { display: none; }   /* 窄屏放不下，本地转录的说明底部还有 */
       .drop-zone { min-height: 220px; padding: 32px 20px; }
       .drop-title { font-size: 20px; }
       .results-toolbar { gap: 6px; }
@@ -578,7 +610,10 @@
     <div class="header">
       <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" aria-label="打开历史记录" aria-expanded="false" id="menuBtn">☰</button>
       <h1>留声</h1>
-      <span class="header-badge" id="headerBadge">本地转录 · 数据不出公司</span>
+      <div class="header-actions">
+        <button type="button" class="header-btn" id="corrOpenBtn" onclick="openCorrections()">纠错词表</button>
+        <span class="header-badge" id="headerBadge">本地转录 · 数据不出公司</span>
+      </div>
     </div>
 
     <div class="content">
@@ -602,8 +637,7 @@
             </svg>
             <div class="drop-title" id="uploadLabel">把录音拖到这里</div>
             <div class="drop-title drop-release" id="dropRelease" aria-hidden="true">松开鼠标，开始转录</div>
-            <div class="drop-hint" id="dropHint"><span>多个文件、整个文件夹都可以 ·</span> <span>也可以点这里选</span></div>
-            <div class="drop-formats"><span>m4a</span><span>mp3</span><span>wav</span><span>aac</span><span>flac</span><span>ogg</span><span>webm</span><span>caf</span><span>mp4</span></div>
+            <div class="drop-hint" id="dropHint">或点这里选 · 文件夹也行</div>
           </div>
 
           <button type="button" class="record-link" id="recordLink" onclick="toggleRecording()">
@@ -685,6 +719,26 @@
           </div>
           <button class="modal-btn primary" onclick="doRegenerate(document.getElementById('regenNotes').value.trim())">开始重新生成</button>
           <button class="modal-btn secondary" onclick="document.getElementById('regenModal').classList.remove('show')">取消</button>
+        </div>
+      </div>
+
+      <div class="modal-overlay" id="corrModal" role="dialog" aria-modal="true" aria-labelledby="corrTitle">
+        <div class="modal corr-modal">
+          <div class="modal-title" id="corrTitle" style="text-align:center;">纠错词表</div>
+          <div class="modal-desc" style="text-align:center; margin-bottom:16px;">总认错的词写在这里，转录完自动改对；保存后下一次转录就生效</div>
+          <div class="corr-quick">
+            <label class="sr-only" for="corrWrong">老是认错的词</label>
+            <input id="corrWrong" placeholder="老是认错的词，如 Lukas" />
+            <span class="corr-arrow" aria-hidden="true">→</span>
+            <label class="sr-only" for="corrRight">应该是</label>
+            <input id="corrRight" placeholder="应该是，如 Lucas" />
+            <button type="button" class="toolbar-btn" onclick="corrQuickAdd()">加一行</button>
+          </div>
+          <label class="sr-only" for="corrText">词表内容</label>
+          <textarea id="corrText" spellcheck="false"></textarea>
+          <div class="corr-status" id="corrStatus" role="status"></div>
+          <button class="modal-btn primary" onclick="saveCorrections()">保存</button>
+          <button class="modal-btn secondary" onclick="closeCorrections()">关闭</button>
         </div>
       </div>
 
@@ -1452,6 +1506,81 @@ async function fetchConfig() {
   document.getElementById('historyHint').textContent = '点击查看之前的转录';
   document.getElementById('stopConfirmDesc').textContent = '停止后将开始转录录音';
   document.getElementById('recordHint').textContent = recordHintText();
+}
+
+// ────── 纠错词表面板 ──────
+let corrOpener = null;
+
+async function openCorrections() {
+  corrOpener = document.activeElement;
+  const status = document.getElementById('corrStatus');
+  status.textContent = '';
+  status.className = 'corr-status';
+  try {
+    const res = await fetch('/api/corrections');
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `服务器错误 (${res.status})`);
+    document.getElementById('corrText').value = data.text;
+  } catch (err) {
+    showToast('读不了纠错词表：' + err.message);
+    return;
+  }
+  document.getElementById('corrModal').classList.add('show');
+  document.getElementById('corrWrong').focus();
+}
+
+function closeCorrections() {
+  document.getElementById('corrModal').classList.remove('show');
+  if (corrOpener && document.contains(corrOpener)) corrOpener.focus();
+}
+
+// 快速加一行：这个正词已经有行了就把新错写并进去（一个正词一行），没有才新起一行
+function corrQuickAdd() {
+  const wrongEl = document.getElementById('corrWrong');
+  const rightEl = document.getElementById('corrRight');
+  const wrong = wrongEl.value.trim();
+  const right = rightEl.value.trim();
+  const status = document.getElementById('corrStatus');
+  status.className = 'corr-status';
+  if (!wrong || !right) { status.textContent = '「认错的词」和「应该是」都要填'; return; }
+  const ta = document.getElementById('corrText');
+  const lines = ta.value.replace(/\s+$/, '').split('\n');
+  const at = lines.findIndex(l => {
+    const m = l.match(/^([^#].*?)=>\s*(.+)$/);
+    return m && m[2].trim().toLowerCase() === right.toLowerCase();
+  });
+  if (at >= 0) lines[at] = `${wrong} | ${lines[at]}`;
+  else lines.push(`${wrong} => ${right}`);
+  ta.value = lines.join('\n') + '\n';
+  wrongEl.value = '';
+  rightEl.value = '';
+  wrongEl.focus();
+  status.textContent = at >= 0 ? `已并进「${right}」那一行，别忘了点保存` : '加好了，别忘了点保存';
+}
+
+async function saveCorrections() {
+  const status = document.getElementById('corrStatus');
+  status.className = 'corr-status';
+  status.textContent = '保存中…';
+  try {
+    const res = await fetch('/api/corrections', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: document.getElementById('corrText').value }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `服务器错误 (${res.status})`);
+    if (data.skipped.length) {
+      status.className = 'corr-status warn';
+      status.textContent = `已保存，${data.rules} 条生效；第 ${data.skipped.join('、')} 行格式不对没生效（应为「错词 => 正词」）`;
+    } else {
+      status.className = 'corr-status ok';
+      status.textContent = `已保存，${data.rules} 条生效，下一次转录就会用上`;
+    }
+  } catch (err) {
+    status.className = 'corr-status warn';
+    status.textContent = '保存失败：' + err.message;
+  }
 }
 
 // ────── 转录队列 ──────

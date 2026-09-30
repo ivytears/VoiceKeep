@@ -64,7 +64,7 @@ const DIAR_SCRIPT = process.env.LIUSHENG_DIAR_SCRIPT || path.join(__dirname, 'to
 const DIAR_ENABLED = fs.existsSync(DIAR_PY) && fs.existsSync(DIAR_SCRIPT);
 const { buildSpeakerTranscript } = require('./tools/speakers');
 const { filterHallucinations, smoothFillers } = require('./tools/textclean');
-const { loadRules: loadCorrections, applyCorrections } = require('./tools/corrections');
+const { loadRules: loadCorrections, applyCorrections, parseTable, DEFAULT_TABLE } = require('./tools/corrections');
 console.log(DIAR_ENABLED ? '[diar] 说话人分离已启用' : `[diar] 说话人分离未启用（缺 ${fs.existsSync(DIAR_PY) ? DIAR_SCRIPT : DIAR_PY}）`);
 const diarSemaphore = new Semaphore(1);   // 2 小时录音峰值内存约 2.7GB，不并发
 // 转录密度门槛：每「语音分钟」不到这么多字就不标说话人（空录、环境噪声上做分离只会切出幻觉说话人，
@@ -672,6 +672,34 @@ app.post('/api/live/finish/:sessionId', liveUpload.single('chunk'), async (req, 
 // 前端按它收起纪要相关的界面：只出原文
 app.get('/api/config', (req, res) => {
   res.json({ transcriptOnly: true });
+});
+
+// ────── 纠错词表 ──────
+// 网页「纠错词表」面板读写数据目录里的词表文件；转录每次现读这份文件，保存后下一次转录就生效
+
+app.get('/api/corrections', (req, res) => {
+  try {
+    if (!fs.existsSync(CORRECTIONS_FILE)) fs.writeFileSync(CORRECTIONS_FILE, DEFAULT_TABLE, 'utf8');
+    res.json({ text: fs.readFileSync(CORRECTIONS_FILE, 'utf8') });
+  } catch (err) {
+    res.status(500).json({ error: '读不了词表: ' + err.message });
+  }
+});
+
+app.put('/api/corrections', (req, res) => {
+  const text = req.body && req.body.text;
+  if (typeof text !== 'string') return res.status(400).json({ error: '请提交 { text: 词表内容 }' });
+  if (text.length > 200 * 1024) return res.status(400).json({ error: '词表太大了（超过 200KB）' });
+  const { rules, skipped } = parseTable(text);   // 只做解析统计；坏行不拦保存，回给前端报行号
+  try {
+    // 先写临时文件再改名：转录中途读表也不会读到写了一半的内容
+    const tmp = CORRECTIONS_FILE + '.tmp';
+    fs.writeFileSync(tmp, text, 'utf8');
+    fs.renameSync(tmp, CORRECTIONS_FILE);
+  } catch (err) {
+    return res.status(500).json({ error: '保存失败: ' + err.message });
+  }
+  res.json({ ok: true, rules: rules.length, skipped });
 });
 
 app.get('/api/history', async (req, res) => {

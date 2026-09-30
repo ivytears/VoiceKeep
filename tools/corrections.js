@@ -9,7 +9,7 @@ const DEFAULT_TABLE = `# 留声纠错词表：每行「错词 => 正词」，一
 # 改完下一次转录就生效，不用重启留声
 Cloud Code => Claude Code
 Klod => Claude
-GIMINAN | Gimilan => Gemini
+GIMINAN | Gimilan | Gemina => Gemini
 `;
 
 const ALNUM = /[A-Za-z0-9]/;
