@@ -451,7 +451,35 @@
       font-size: 14px; line-height: 1.85; white-space: pre-wrap; word-break: break-word;
       color: var(--text-secondary);
     }
-    .transcript-toggle { display: flex; gap: 6px; }
+    .transcript-toggle { display: flex; gap: 6px; flex-wrap: wrap; }
+    .transcript-toggle .toggle-spacer { flex: 1; }
+
+    /* 说话人标签：点一下改真名 */
+    .spk-chip {
+      display: inline-block; padding: 1px 10px; margin-right: 2px;
+      border: 1px solid transparent; border-radius: 999px;
+      background: var(--accent-light); color: var(--accent);
+      font: inherit; font-size: 12px; font-weight: 500; line-height: 1.7;
+      cursor: pointer;
+      transition: border-color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
+    }
+    button.spk-chip:hover { border-color: var(--accent); }
+    button.spk-chip:active { transform: scale(0.97); }
+    .spk-chip-unsure { background: var(--bg-secondary); color: var(--muted); border-color: var(--border-subtle); cursor: default; }
+
+    /* 改名弹窗 */
+    .spk-modal { max-width: 420px; text-align: left; }
+    .spk-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .spk-row .spk-row-label { flex-shrink: 0; min-width: 76px; font-size: 13px; color: var(--text-secondary); }
+    .spk-row input {
+      flex: 1; min-width: 0; padding: 9px 12px;
+      border: 1px solid var(--border); border-radius: 6px;
+      background: var(--bg); color: var(--text);
+      font: inherit; font-size: 13px; outline: none;
+      transition: border-color var(--duration-fast) var(--ease-out);
+    }
+    .spk-row input:focus { border-color: var(--accent); }
+    .spk-status { min-height: 18px; font-size: 12px; margin: 4px 0 12px; color: var(--red); }
     .seg-btn {
       padding: 5px 14px; font-size: 13px; cursor: pointer;
       background: var(--card); color: var(--text-secondary);
@@ -609,6 +637,18 @@
         </div>
       </div>
 
+      <div class="modal-overlay" id="spkModal" role="dialog" aria-modal="true" aria-labelledby="spkTitle">
+        <div class="modal spk-modal">
+          <div class="modal-title" id="spkTitle" style="text-align:center;">改说话人名</div>
+          <div class="modal-desc" style="text-align:center; margin-bottom:16px;">填真名，显示和复制出来的都会换成它；留空就还原成「说话人一」这样的编号。只改这一条记录。</div>
+          <div id="spkFields"></div>
+          <datalist id="spkNameOptions"></datalist>
+          <div class="spk-status" id="spkStatus" role="status"></div>
+          <button class="modal-btn primary" onclick="saveSpeakerNames()">保存</button>
+          <button class="modal-btn secondary" onclick="closeSpeakerModal()">取消</button>
+        </div>
+      </div>
+
       <div class="modal-overlay" id="corrModal" role="dialog" aria-modal="true" aria-labelledby="corrTitle">
         <div class="modal corr-modal">
           <div class="modal-title" id="corrTitle" style="text-align:center;">纠错词表</div>
@@ -677,6 +717,8 @@
           <div class="transcript-toggle" id="transcriptToggle" style="display:none; margin-bottom:12px;">
             <button type="button" class="seg-btn active" id="segSpeaker" onclick="setTranscriptView('speaker')">显示说话人</button>
             <button type="button" class="seg-btn" id="segPlain" onclick="setTranscriptView('plain')">纯文字</button>
+            <span class="toggle-spacer"></span>
+            <button type="button" class="seg-btn" id="renameSpkBtn" onclick="openSpeakerModal()">改说话人名</button>
           </div>
           <div class="transcript-content" id="transcriptContent"></div>
         </div>
@@ -706,7 +748,8 @@ const minutesEditor = document.getElementById('minutesEditor');
 
 let currentMinutes = '';
 let currentTranscript = '';
-let currentSpeakerTranscript = '';  // LLM 标注说话人后的原文（带 [姓名]）
+let currentSpeakerTranscript = '';  // 带 [说话人一] 标注的原文（原样保存，不改写）
+let currentSpeakerNames = {};       // 这条记录的「默认标签 → 真名」对照表（speakerNames）
 let transcriptView = 'speaker';     // 原文视图：'speaker' 带说话人 | 'plain' 纯文字
 let currentId = '';
 const steps = [];
@@ -966,14 +1009,144 @@ function setTranscriptView(view) {
   renderTranscript();
 }
 
-// 渲染原文：有说话人标注且当前选中"说话人"视图时显示标注版，否则纯文字
-// 用 textContent 渲染（不走 innerHTML），避免转录内容里的特殊字符造成 XSS
+// ────── 说话人标签与改名 ──────
+// 标注格式（tools/speakers.js）：每轮一行「[说话人一] 文本」；「说话人？」是存疑标记，不改名
+const SPEAKER_LABEL_RE = /^\[(说话人(?:[一二三四五六七八九十]+|\d+|？))\] /;
+
+const displaySpeakerName = label => currentSpeakerNames[label] || label;
+
+// 这条记录里出现过的可改名标签（按出现顺序，不含「说话人？」）
+function speakerLabels() {
+  const seen = [];
+  for (const line of currentSpeakerTranscript.split('\n')) {
+    const m = line.match(SPEAKER_LABEL_RE);
+    if (m && m[1] !== '说话人？' && !seen.includes(m[1])) seen.push(m[1]);
+  }
+  return seen;
+}
+
+// 「复制纯文本」用：把标签换成真名后的文本
+function speakerTextWithNames() {
+  return currentSpeakerTranscript.split('\n').map(line => {
+    const m = line.match(SPEAKER_LABEL_RE);
+    return m && m[1] !== '说话人？'
+      ? `[${displaySpeakerName(m[1])}] ` + line.slice(m[0].length)
+      : line;
+  }).join('\n');
+}
+
+// 渲染原文：说话人视图逐行画，行首标签是可点的小标签；全程 DOM + textContent，不走 innerHTML
 function renderTranscript() {
   const hasSpeaker = !!currentSpeakerTranscript;
   document.getElementById('transcriptToggle').style.display = hasSpeaker ? '' : 'none';
+  const box = document.getElementById('transcriptContent');
   const useSpeaker = hasSpeaker && transcriptView === 'speaker';
-  document.getElementById('transcriptContent').textContent =
-    useSpeaker ? currentSpeakerTranscript : currentTranscript;
+  if (!useSpeaker) { box.textContent = currentTranscript; return; }
+  box.textContent = '';
+  currentSpeakerTranscript.split('\n').forEach((line, i) => {
+    if (i) box.appendChild(document.createTextNode('\n'));
+    const m = line.match(SPEAKER_LABEL_RE);
+    if (!m) { box.appendChild(document.createTextNode(line)); return; }
+    const label = m[1];
+    let chip;
+    if (label === '说话人？') {
+      chip = document.createElement('span');
+      chip.className = 'spk-chip spk-chip-unsure';
+      chip.title = '声纹拿不准是谁，保持存疑';
+    } else {
+      chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'spk-chip';
+      chip.title = '改这个说话人的名字';
+      chip.addEventListener('click', () => openSpeakerModal(label));
+    }
+    chip.textContent = displaySpeakerName(label);
+    box.appendChild(chip);
+    box.appendChild(document.createTextNode(' ' + line.slice(m[0].length)));
+  });
+}
+
+// 最近用过的名字：填过一次的同事名下次自动提示（只存在这台浏览器里）
+const SPK_RECENT_KEY = 'liusheng-speaker-names';
+function spkRecentNames() {
+  try { return JSON.parse(localStorage.getItem(SPK_RECENT_KEY)) || []; } catch (e) { return []; }
+}
+function spkRemember(names) {
+  try {
+    const merged = [...new Set([...names, ...spkRecentNames()])].slice(0, 12);
+    localStorage.setItem(SPK_RECENT_KEY, JSON.stringify(merged));
+  } catch (e) {}
+}
+
+let spkOpener = null;
+
+function openSpeakerModal(focusLabel) {
+  const labels = speakerLabels();
+  if (!labels.length) { showToast('这条记录没有可改名的说话人'); return; }
+  spkOpener = document.activeElement;
+  const fields = document.getElementById('spkFields');
+  fields.textContent = '';
+  for (const label of labels) {
+    const row = document.createElement('div');
+    row.className = 'spk-row';
+    const id = 'spk-input-' + label;
+    const lab = document.createElement('label');
+    lab.className = 'spk-row-label';
+    lab.htmlFor = id;
+    lab.textContent = label;
+    const input = document.createElement('input');
+    input.id = id;
+    input.dataset.label = label;
+    input.value = currentSpeakerNames[label] || '';
+    input.placeholder = '真名，留空还原';
+    input.maxLength = 30;
+    input.setAttribute('list', 'spkNameOptions');
+    row.append(lab, input);
+    fields.appendChild(row);
+  }
+  const dl = document.getElementById('spkNameOptions');
+  dl.textContent = '';
+  for (const n of spkRecentNames()) {
+    const opt = document.createElement('option');
+    opt.value = n;
+    dl.appendChild(opt);
+  }
+  document.getElementById('spkStatus').textContent = '';
+  document.getElementById('spkModal').classList.add('show');
+  const target = focusLabel ? document.getElementById('spk-input-' + focusLabel) : fields.querySelector('input');
+  if (target) target.focus();
+}
+
+function closeSpeakerModal() {
+  document.getElementById('spkModal').classList.remove('show');
+  if (spkOpener && document.contains(spkOpener)) spkOpener.focus();
+}
+
+async function saveSpeakerNames() {
+  const status = document.getElementById('spkStatus');
+  const names = {};
+  for (const input of document.querySelectorAll('#spkFields input')) {
+    const v = input.value.trim();
+    if (/[\[\]]/.test(v)) { status.textContent = '名字里不能带方括号'; input.focus(); return; }
+    names[input.dataset.label] = v;
+  }
+  status.textContent = '保存中…';
+  try {
+    const res = await fetch(`/api/transcript/${currentId}/speakers`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ names }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `服务器错误 (${res.status})`);
+    currentSpeakerNames = data.names || {};
+    spkRemember(Object.values(currentSpeakerNames));
+    renderTranscript();
+    closeSpeakerModal();
+    showToast('说话人名字已保存，复制出来的也是新名字');
+  } catch (err) {
+    status.textContent = '保存失败：' + err.message;
+  }
 }
 
 // ────── 只出原文 ──────
@@ -1732,8 +1905,8 @@ function copyMinutes() {
 
 function copyPlainText() {
   const btn = document.getElementById('copyTextBtn');
-  // 复制当前视图：显示说话人时复制带 [姓名] 的版本，否则复制纯文字
-  const text = (currentSpeakerTranscript && transcriptView === 'speaker') ? currentSpeakerTranscript : currentTranscript;
+  // 复制当前视图：显示说话人时复制带 [真名] 的版本（按对照表替换），否则复制纯文字
+  const text = (currentSpeakerTranscript && transcriptView === 'speaker') ? speakerTextWithNames() : currentTranscript;
   copyText(text, btn, '复制纯文本');
 }
 
@@ -1778,6 +1951,7 @@ function resetUI() {
   currentMinutes = '';
   currentTranscript = '';
   currentSpeakerTranscript = '';
+  currentSpeakerNames = {};
 }
 
 // P1 fix: mobile sidebar toggle
@@ -1869,6 +2043,7 @@ async function loadTranscript(id, el) {
     currentMinutes = data.minutes || '';
     currentTranscript = data.transcript || '';
     currentSpeakerTranscript = data.speakerTranscript || '';
+    currentSpeakerNames = data.speakerNames || {};
     transcriptView = 'speaker';
 
     uploadSection.style.display = 'none';

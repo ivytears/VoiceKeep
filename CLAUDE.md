@@ -10,7 +10,7 @@
 - **音频**：FFmpeg 转成 16k 单声道 WAV；超过 10 分钟按 600 秒切片顺序识别；whisper 并发数为 1。
 - **语音识别**：whisper.cpp，模型 `large-v3-turbo-q8_0`（没有就退回 q5_0）+ Silero VAD + 束搜索 `-bs 5`，initial prompt 是一句中性的中文开场白（让输出带标点）。默认用 PATH 上的 whisper-cli（Homebrew，Metal）；环境变量 `WHISPER_CLI` 指向自编译的 CoreML 版可以用上 Apple 神经引擎（整体快约 2.4 倍）。
 - **文本处理**（`tools/`）：`textclean.js` 用黑名单删字幕幻觉、删连续复读，并给说话人视图做保守的语气词顺滑（纯文字视图保持逐字原文）；`corrections.js` 是纠错词表（数据目录里的 `纠错词表.txt`，没有就写入默认表，每次转录现读；网页右上角的面板经 `GET/PUT /api/corrections` 直接读写这个文件）；繁转简用 opencc-js。
-- **说话人分离**：`tools/diarize.py` 跑 sherpa-onnx（`~/.diar-venv`，离线；模型在 `~/.diar-models`，安装包里带一份），输出 `{speakers, segments}`；`tools/speakers.js` 把说话区间和 whisper 段落按重叠时长合并成「[说话人一] …」。没装 `~/.diar-venv` 就只出纯文字。
+- **说话人分离**：`tools/diarize.py` 跑 sherpa-onnx（`~/.diar-venv`，离线；模型在 `~/.diar-models`，安装包里带一份），输出 `{speakers, segments}`；`tools/speakers.js` 把说话区间和 whisper 段落按重叠时长合并成「[说话人一] …」。没装 `~/.diar-venv` 就只出纯文字。改名走 `PUT /api/transcript/:id/speakers`：只在记录上存 `speakerNames` 对照表，前端渲染和复制时替换，`speakerTranscript` 原文永远不改写（可逆）。
 - **数据**：记录 JSON 在 `transcripts/`，上传临时文件在 `uploads/`（数据目录默认是项目根，安装包里是 `~/Library/Application Support/留声/data`）。启动时和每小时清理超过 24 小时的文件。
 - **打包**：`packaging/build.sh` 产出自包含的 `留声.app` 和 `.dmg`：官方 Node.js、从源码编译的 arm64 FFmpeg（`build-ffmpeg.sh`，只含解码器、不启用 GPL 组件）、从 Homebrew 抽出并重定位的 whisper-cli 和 dylib、模型、说话人分离模型。`packaging/launcher.sh` 是 .app 的主程序：清隔离标记，按本机名和局域网 IP 签发 / 重签证书，首次以当前用户身份信任本地 CA，已在运行就只开浏览器，否则把 node 放到后台、等端口就绪、开完浏览器就退出。
 

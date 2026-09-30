@@ -578,6 +578,39 @@ app.get('/api/transcript/:id', (req, res) => {
 });
 
 // Delete transcript — P0 fix: validate ID
+// 说话人改名：只存一张「默认标签 → 真名」对照表，speakerTranscript 原文一个字不改（可逆，清空即还原）。
+// 前端显示和「复制纯文本」都按这张表替换
+app.put('/api/transcript/:id/speakers', (req, res) => {
+  const filePath = safeTranscriptPath(req.params.id);
+  if (!filePath) return res.status(400).json({ error: 'ID 格式无效' });
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: '未找到' });
+  const names = req.body && req.body.names;
+  if (!names || typeof names !== 'object' || Array.isArray(names)) {
+    return res.status(400).json({ error: '请提交 { names: { "说话人一": "真名", … } }' });
+  }
+  const entries = Object.entries(names);
+  if (entries.length > 20) return res.status(400).json({ error: '说话人太多了（最多 20 个）' });
+  const cleaned = {};
+  for (const [label, name] of entries) {
+    // 只允许给默认标签改名；「说话人？」是存疑标记，不改名
+    if (!/^说话人([一二三四五六七八九十]+|\d+)$/.test(label)) {
+      return res.status(400).json({ error: `只能给「说话人一」这样的默认标签改名（收到「${label}」）` });
+    }
+    if (typeof name !== 'string' || name.length > 30 || /[\[\]\n\r]/.test(name)) {
+      return res.status(400).json({ error: '名字最长 30 字，不能带方括号或换行' });
+    }
+    const trimmed = name.trim();
+    if (trimmed) cleaned[label] = trimmed;   // 留空 = 恢复默认标签
+  }
+  try {
+    const record = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    saveTranscriptRecord({ ...record, speakerNames: cleaned });
+    res.json({ ok: true, names: cleaned });
+  } catch (err) {
+    res.status(500).json({ error: '保存失败: ' + err.message });
+  }
+});
+
 app.delete('/api/transcript/:id', (req, res) => {
   const filePath = safeTranscriptPath(req.params.id);
   if (!filePath) return res.status(400).json({ error: 'ID 格式无效' });

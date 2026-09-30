@@ -167,6 +167,20 @@ STRIPPED="$(printf '%s' "$SPK" | sed 's/\[说话人[^]]*\]//g' | tr -d '[:space:
 grep -q '"step":"speaker_done"' "$WORK/sse-upload.txt" || die "应发出 speaker_done 事件，前端靠它显示「显示说话人」切换"
 ok "本机说话人分离：标出说话人一 / 二，去掉标签后与原文逐字相同"
 
+# 说话人改名：只存对照表，speakerTranscript 原文不动；非法输入拒绝
+[[ "$(api -X PUT -H 'Content-Type: application/json' -d '{"names":{"说话人一":"Lucas","说话人二":"客户"}}' "$BASE/api/transcript/$ID/speakers" | json_get ok)" == "true" ]] \
+  || die "PUT /api/transcript/:id/speakers 保存失败"
+AFTER="$(api "$BASE/api/transcript/$ID")"
+[[ "$(printf '%s' "$AFTER" | json_get speakerNames.说话人一)" == "Lucas" ]] || die "speakerNames 没存上: $AFTER"
+[[ "$(printf '%s' "$AFTER" | json_get speakerTranscript)" == *"[说话人一]"* ]] || die "改名不该动 speakerTranscript 原文"
+[[ "$(http_code -X PUT -H 'Content-Type: application/json' -d '{"names":{"老板":"Lucas"}}' "$BASE/api/transcript/$ID/speakers")" == "400" ]] \
+  || die "非默认标签应拒绝"
+[[ "$(http_code -X PUT -H 'Content-Type: application/json' -d '{"names":{"说话人一":"[坏]"}}' "$BASE/api/transcript/$ID/speakers")" == "400" ]] \
+  || die "带方括号的名字应拒绝"
+[[ "$(api -X PUT -H 'Content-Type: application/json' -d '{"names":{"说话人一":""}}' "$BASE/api/transcript/$ID/speakers" | json_get names.说话人一)" == "" ]] \
+  || die "留空应恢复默认标签"
+ok "说话人改名：对照表落盘、原文不动、非法标签和方括号拒绝、留空还原"
+
 [[ -n "$(whisper_prompt)" ]] || die "whisper 没收到 --prompt（中文标点靠它带）"
 ok "whisper 收到了提示词：$(whisper_prompt)"
 
