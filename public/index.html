@@ -35,8 +35,6 @@
       --green-light: #eef6f1;
       --red: #c44040;
       --red-light: #fdf0f0;
-      --record-red: #d04040;
-      --record-glow: rgba(208, 64, 64, 0.3);
 
       /* Legacy aliases (JS compatibility) */
       --blue: var(--accent);
@@ -203,69 +201,10 @@
     /* ────── Landing ────── */
     .landing { max-width: 560px; margin: 0 auto; text-align: center; position: relative; padding-top: 14vh; }
     .landing-blobs { display: none; }
-    .mic-wrap { margin-bottom: 20px; position: relative; z-index: 1; }
-
-    /* ────── Mic Button — the soul ────── */
-    .mic-btn {
-      width: 112px; height: 112px; border-radius: 50%;
-      border: none;
-      background: var(--accent);
-      color: #fffef9; cursor: pointer;
-      display: inline-flex; align-items: center; justify-content: center;
-      box-shadow:
-        0 2px 4px rgba(44,37,32,0.08),
-        0 12px 40px var(--accent-glow);
-      transition: transform var(--duration-fast) var(--ease-out),
-                  box-shadow var(--duration-default) var(--ease-out);
-      position: relative;
-      animation: mic-breathe 4s ease-in-out infinite;
-    }
-    @keyframes mic-breathe {
-      0%, 100% {
-        transform: scale(1);
-        box-shadow: 0 2px 4px rgba(44,37,32,0.08), 0 12px 40px rgba(192,93,59,0.12);
-      }
-      50% {
-        transform: scale(1.08);
-        box-shadow: 0 6px 12px rgba(44,37,32,0.05), 0 24px 72px rgba(192,93,59,0.38);
-      }
-    }
-    .mic-btn:hover {
-      transform: scale(1.06);
-      box-shadow:
-        0 2px 4px rgba(44,37,32,0.08),
-        0 16px 52px rgba(192,93,59,0.32);
-      animation: none;
-    }
-    .mic-btn:active { transform: scale(0.96); animation: none; }
-    .mic-btn.recording { background: var(--record-red); animation: none; }
-    .mic-btn.recording::after {
-      content: '';
-      position: absolute; inset: -2px; border-radius: 50%;
-      background: var(--record-glow);
-      animation: pulse-ring 2s ease-in-out infinite;
-    }
-    .mic-btn svg { width: 48px; height: 48px; fill: currentColor; }
-    @keyframes pulse-ring {
-      0%   { transform: scale(1);    opacity: 0.7; }
-      70%  { transform: scale(1.5);  opacity: 0; }
-      100% { transform: scale(1.5);  opacity: 0; }
-    }
-
-    .mic-label {
-      font-family: "Noto Serif SC", "Songti SC", serif;
-      font-size: 20px; font-weight: 600; color: var(--text);
-      margin-top: 20px; letter-spacing: 0.01em;
-    }
-    .mic-hint { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.6; opacity: 0.7; }
     .slogan {
       font-family: "Noto Serif SC", "Songti SC", serif;
       font-size: 14px; font-weight: 400; letter-spacing: 0.2em;
       color: var(--muted); margin-bottom: 32px; opacity: 0.7;
-    }
-    .record-timer {
-      font-size: 36px; font-weight: 600; color: var(--record-red);
-      margin: 12px 0 4px; font-variant-numeric: tabular-nums; letter-spacing: 2px;
     }
 
     /* ────── Drop zone — 首页主角：把录音拖进来 ────── */
@@ -319,20 +258,6 @@
     body.is-dragging .drop-zone .drop-release { display: block; }
     .drop-hint { font-size: 13px; color: var(--text-secondary); margin-top: 10px; letter-spacing: 0.02em; }
 
-    /* 现场录音退成次要入口 */
-    .record-link {
-      display: inline-flex; align-items: center; gap: 6px;
-      margin-top: 20px; padding: 8px 16px; min-height: 36px;
-      border: 1px solid transparent; border-radius: 999px;
-      background: transparent; color: var(--muted);
-      font: inherit; font-size: 13px; letter-spacing: 0.02em; cursor: pointer;
-      transition: color var(--duration-fast) var(--ease-out),
-                  border-color var(--duration-fast) var(--ease-out),
-                  background-color var(--duration-fast) var(--ease-out);
-    }
-    .record-link svg { width: 15px; height: 15px; fill: currentColor; }
-    .record-link:hover { color: var(--accent); border-color: var(--border); background: var(--card); }
-    .record-link:active { transform: scale(0.97); }
 
     /* Voice Memo Guide (iPhone) */
     .voice-memo-guide { margin-top: 20px; }
@@ -362,7 +287,6 @@
       font-size: 20px; font-weight: 600; color: var(--accent);
     }
     .drag-overlay.show { display: flex; }
-    .drag-overlay.is-blocked { color: var(--text-secondary); border-color: var(--muted); }
 
     input[type="file"] { display: none; }
 
@@ -569,15 +493,6 @@
       }
     }
 
-    /* ────── Recording state: 拖放区让位，只留录音面板 ────── */
-    .record-panel { display: none; }
-    .landing.is-recording .record-panel { display: block; animation: landingReveal 0.5s var(--ease-out) both; }
-    .landing.is-recording .slogan,
-    .landing.is-recording .drop-zone,
-    .landing.is-recording .record-link,
-    .landing.is-recording .voice-memo-guide { display: none; }
-    .landing.is-recording .mic-hint:not(#liveStatus) { opacity: 0; }
-    .landing.is-recording .mic-label { opacity: 0.5; }
 
     /* ────── Page load animation ────── */
     @keyframes landingReveal {
@@ -640,24 +555,6 @@
             <div class="drop-hint" id="dropHint">或点这里选 · 文件夹也行</div>
           </div>
 
-          <button type="button" class="record-link" id="recordLink" onclick="toggleRecording()">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-            现场录音，边录边转
-          </button>
-
-          <div class="record-panel" id="recordPanel">
-            <div class="mic-wrap">
-              <button class="mic-btn" id="recordBtn" onclick="toggleRecording()" aria-label="停止录音">
-                <svg viewBox="0 0 24 24" id="micIcon"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-              </button>
-            </div>
-            <div class="mic-label" id="recordLabel">开始录音</div>
-            <div class="record-timer" id="recordTimer" style="display:none">00:00:00</div>
-            <div class="mic-hint" id="recordHint">录完自动生成纪要</div>
-            <div class="mic-hint" id="liveStatus" style="display:none; margin-top:8px; color:var(--green); font-weight:500;">
-              <span id="liveChunkCount">0</span> 段已转录 · <span id="liveCharCount">0</span> 字
-            </div>
-          </div>
           <!-- iPhone 语音备忘录引导 -->
           <div class="voice-memo-guide" id="voiceMemoGuide" style="display:none;">
             <div class="vm-flow">
@@ -689,23 +586,13 @@
           <input type="file" id="fileInput" accept=".m4a,.mp3,.mp4,.wav,.aac,.ogg,.webm,.caf,.flac" multiple />
         </div>
 
-        <div class="modal-overlay" id="micModal" role="dialog" aria-modal="true" aria-labelledby="micModalTitle">
+        <div class="modal-overlay" id="backupModal" role="dialog" aria-modal="true" aria-labelledby="backupTitle">
           <div class="modal">
             <div class="modal-icon">🎙️</div>
-            <div class="modal-title" id="micModalTitle">需要麦克风权限</div>
-            <div class="modal-desc" id="micModalDesc">点击下方按钮后，浏览器会弹出权限请求，请选择「允许」</div>
-            <button class="modal-btn primary" id="micModalBtn" onclick="requestMic()">允许录音</button>
-            <button class="modal-btn secondary" onclick="closeMicModal()">改用上传文件</button>
-          </div>
-        </div>
-
-        <div class="modal-overlay" id="stopConfirmModal" role="dialog" aria-modal="true" aria-labelledby="stopConfirmTitle">
-          <div class="modal">
-            <div class="modal-icon" style="font-size:40px">⏹</div>
-            <div class="modal-title" id="stopConfirmTitle">确定要停止录音吗？</div>
-            <div class="modal-desc" id="stopConfirmDesc">停止后将开始处理录音并生成会议纪要</div>
-            <button class="modal-btn primary" onclick="confirmStopRecording()">停止录音</button>
-            <button class="modal-btn secondary" onclick="cancelStopRecording()">继续录音</button>
+            <div class="modal-title" id="backupTitle">发现未完成的录音</div>
+            <div class="modal-desc" id="backupDesc"></div>
+            <button class="modal-btn primary" id="backupBtn" type="button">恢复并处理</button>
+            <button class="modal-btn secondary" id="backupDiscardBtn" type="button">丢弃录音</button>
           </div>
         </div>
       </div>
@@ -827,7 +714,8 @@ let crawlTimer = null;
 let wittyTimer = null;
 let saveTimer = null;
 
-// IndexedDB 录音备份：防止刷新丢失
+// IndexedDB 录音备份：旧版网页录音留下的（录音功能 v1.3.0 已去掉），只读不再写；
+// checkBackup 在启动时把升级前被中断的录音救回来
 const DB_NAME = 'kaihui-backup';
 const DB_STORE = 'recording';
 function openBackupDB() {
@@ -837,15 +725,6 @@ function openBackupDB() {
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
-}
-async function saveChunksToDB(chunks, mimeType) {
-  try {
-    const db = await openBackupDB();
-    const blob = new Blob(chunks, { type: mimeType });
-    const tx = db.transaction(DB_STORE, 'readwrite');
-    tx.objectStore(DB_STORE).put({ blob, mimeType, ts: Date.now() }, 'current');
-    db.close();
-  } catch (e) {}
 }
 async function loadBackupFromDB() {
   try {
@@ -952,7 +831,7 @@ function stopWittyMessages(msg) {
   el.textContent = msg || '';
 }
 
-// ────── Step 管理（全局，handleFile 和 finishLiveSession 共用）──────
+// ────── Step 管理 ──────
 function setStepIcon(iconEl, status) {
   iconEl.textContent = '';
   if (status === 'active') {
@@ -1097,401 +976,9 @@ function renderTranscript() {
     useSpeaker ? currentSpeakerTranscript : currentTranscript;
 }
 
-// Recording
-let mediaRecorder = null;
-let recordChunks = [];
-let recordStartTime = 0;
-let recordTimerInterval = null;
-
-// 边录边转
-let liveSessionId = null;
-let chunkIndex = 0;
-let chunkBuffer = [];
-let liveMimeType = '';
-const CHUNK_DURATION_SEC = 30;
-// 追踪 fire-and-forget 的 chunk 上传 Promise，onstop 时等待它们全部落地
-// 否则点停止时若上一个 chunk 还在路上，会被后端 finished=true 判定为 409 拒掉
-const pendingChunks = new Set();
-let liveChunksDone = 0;
-let liveTotalChars = 0;
-let micRequesting = false;   // 正在等麦克风授权 / 建 session：连点两下只开一个录音
-
-function toggleRecording() {
-  if (mediaRecorder && mediaRecorder.state === 'recording') {
-    document.getElementById('stopConfirmModal').classList.add('show');
-    return;
-  }
-  // 录音和转录队列共用一个进度页，同时跑会互相覆盖：一次只做一件事
-  const busy = batch && batch.running ? '正在转录，这批转完再录音'
-    : liveFinishing ? '正在处理刚才的录音，处理完再录' : '';
-  if (busy) { showToast(busy); return; }
-  requestMic();
-}
-
-function confirmStopRecording() {
-  document.getElementById('stopConfirmModal').classList.remove('show');
-  if (mediaRecorder && mediaRecorder.state === 'recording') {
-    mediaRecorder.stop();
-    enterLiveFinishing();
-  }
-}
-
-// 录音停了（点了停止，或录音自己断了，比如蓝牙麦克风断开）：收起录音面板，切到进度页等最后几段转完。
-// 这期间不接新文件、不开新录音（见 busyReason / toggleRecording）
-function enterLiveFinishing() {
-  if (liveFinishing) return;
-  liveFinishing = true;
-  document.getElementById('recordBtn').classList.remove('recording');
-  document.querySelector('.landing').classList.remove('is-recording');
-  document.getElementById('recordLabel').textContent = '开始录音';
-  document.getElementById('recordHint').textContent = '正在处理...';
-  document.getElementById('liveStatus').style.display = 'none';
-  clearInterval(recordTimerInterval);
-  window.onbeforeunload = null;
-  document.body.style.overscrollBehavior = '';
-  document.documentElement.style.overscrollBehavior = '';
-  resetProgressView();
-  uploadSection.style.display = 'none';
-  resultsArea.classList.remove('show');
-  progressArea.classList.add('show');
-  document.getElementById('progressFile').textContent = '现场录音';
-  addStep('正在收尾…', 'active');
-}
-
-function cancelStopRecording() {
-  document.getElementById('stopConfirmModal').classList.remove('show');
-}
-
-function showMicModal(type) {
-  const modal = document.getElementById('micModal');
-  const title = document.getElementById('micModalTitle');
-  const desc = document.getElementById('micModalDesc');
-  const btn = document.getElementById('micModalBtn');
-
-  if (type === 'needHttps') {
-    const httpsUrl = `https://${location.hostname}:3443`;
-    title.textContent = '录音需要在电脑端使用';
-    desc.innerHTML = `在电脑浏览器打开 <a href="${httpsUrl}" style="color:var(--accent);font-weight:600">${httpsUrl}</a> 即可录音。<br><br>手机端可以用「语音备忘录」录音后上传。`;
-    btn.textContent = '好的，我上传文件';
-    btn.onclick = () => { closeMicModal(); fileInput.click(); };
-  } else if (type === 'denied') {
-    title.textContent = '麦克风权限被拒绝';
-    desc.textContent = '请点击浏览器地址栏左侧的锁头图标，将麦克风权限改为「允许」，然后刷新页面。';
-    btn.textContent = '刷新页面';
-    btn.onclick = () => location.reload();
-  } else {
-    title.textContent = '当前浏览器不支持录音';
-    desc.textContent = '请直接上传录音文件。';
-    btn.textContent = '我知道了';
-    btn.onclick = closeMicModal;
-  }
-  modal.classList.add('show');
-}
-
-function closeMicModal() { document.getElementById('micModal').classList.remove('show'); }
-
-async function requestMic() {
-  if (micRequesting) return;
-  closeMicModal();
-  // 必须在 HTTPS 下才能使用麦克风（localhost 除外）
-  if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-    showMicModal('needHttps');
-    return;
-  }
-  micRequesting = true;
-  try {
-    if (!navigator.mediaDevices?.getUserMedia) throw { name: 'NotSupportedError' };
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/mp4';
-    liveMimeType = mimeType;
-    mediaRecorder = new MediaRecorder(stream, { mimeType });
-    recordChunks = [];
-    chunkBuffer = [];
-    chunkIndex = 0;
-    liveChunksDone = 0;
-    liveTotalChars = 0;
-
-    // 启动边录边转 session
-    try {
-      const res = await fetch('/api/live/start', { method: 'POST' });
-      const data = await res.json();
-      liveSessionId = data.sessionId;
-      console.log('[live] session 已创建:', liveSessionId);
-    } catch (e) {
-      console.error('[live] 创建 session 失败，回退到传统模式', e);
-      liveSessionId = null;
-    }
-
-    mediaRecorder.ondataavailable = e => {
-      if (e.data.size > 0) {
-        recordChunks.push(e.data);
-        saveChunksToDB(recordChunks, mimeType);
-
-        // 边录边转：累积 chunk，每 30 秒发送一次
-        if (liveSessionId) {
-          chunkBuffer.push(e.data);
-          if (chunkBuffer.length >= CHUNK_DURATION_SEC) {
-            const toSend = chunkBuffer.splice(0);
-            const p = sendLiveChunk(toSend, chunkIndex++);
-            pendingChunks.add(p);
-            p.finally(() => pendingChunks.delete(p));
-          }
-        }
-      }
-    };
-
-    mediaRecorder.onstop = async () => {
-      stream.getTracks().forEach(t => t.stop());
-      enterLiveFinishing();   // 点停止时已经切过了；录音自己断掉时在这里切
-
-      // 弹备忘录，用户填完后再处理
-      showMemoModal(async (ctx) => {
-        // 关键：先等所有 fire-and-forget 的 chunk 都上传完，否则 finish 后到达的会被 409 拒掉
-        if (pendingChunks.size > 0) {
-          await Promise.allSettled([...pendingChunks]);
-        }
-        const dateStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' });
-        if (liveSessionId && chunkIndex > 0) {
-          const lastBlobs = chunkBuffer.splice(0);
-          await finishLiveSession(lastBlobs, chunkIndex, ctx);
-        } else if (liveSessionId && chunkIndex === 0) {
-          const lastBlobs = chunkBuffer.splice(0);
-          if (lastBlobs.length > 0) {
-            await finishLiveSession(lastBlobs, 0, ctx);
-          } else {
-            liveSessionId = null;
-            // clearBackupDB 移到 complete 事件触发，handleFile 失败时保留备份
-            const ext = mimeType.includes('webm') ? 'webm' : 'm4a';
-            const blob = new Blob(recordChunks, { type: mimeType });
-            const file = new File([blob], `会议录音_${dateStr}.${ext}`, { type: mimeType });
-            transcribeRecording(file);
-          }
-        } else {
-          // clearBackupDB 移到 complete 事件触发，handleFile 失败时保留备份
-          const ext = mimeType.includes('webm') ? 'webm' : 'm4a';
-          const blob = new Blob(recordChunks, { type: mimeType });
-          const file = new File([blob], `会议录音_${dateStr}.${ext}`, { type: mimeType });
-          transcribeRecording(file);
-        }
-      }); // end showMemoModal
-    };
-
-    // 等麦克风授权、建 session 的这几秒里，用户可能已经拖文件开始转录了：那这次就不录了
-    if (batch && batch.running) {
-      stream.getTracks().forEach(t => t.stop());
-      mediaRecorder = null;
-      liveSessionId = null;
-      showToast('正在转录，这批转完再录音');
-      return;
-    }
-    resetProgressView();   // 上一批的列表和进度收起来，录完从干净的进度页开始收尾
-    // 点的是「现场录音」：授权期间要是去看了别的页面，也回到录音面板（停止按钮在那儿）
-    uploadSection.style.display = '';
-    progressArea.classList.remove('show');
-    resultsArea.classList.remove('show');
-
-    mediaRecorder.start(1000);
-    window.onbeforeunload = () => '录音进行中，离开页面将丢失录音内容';
-    document.body.style.overscrollBehavior = 'none';
-    document.documentElement.style.overscrollBehavior = 'none';
-    document.getElementById('recordBtn').classList.add('recording');
-    document.querySelector('.landing').classList.add('is-recording');
-    document.getElementById('recordLabel').textContent = '点击停止';
-    document.getElementById('recordHint').textContent = '录音中';
-    document.getElementById('recordTimer').textContent = '00:00:00';   // 上一次的时长别闪一下
-    document.getElementById('recordTimer').style.display = '';
-    document.getElementById('liveStatus').style.display = liveSessionId ? '' : 'none';
-    document.getElementById('recordBtn').focus({ preventScroll: true });   // 「现场录音」按钮藏起来了，焦点交给停止按钮
-    recordStartTime = Date.now();
-
-    recordTimerInterval = setInterval(() => {
-      const sec = Math.floor((Date.now() - recordStartTime) / 1000);
-      const h = String(Math.floor(sec / 3600)).padStart(2, '0');
-      const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
-      const s = String(sec % 60).padStart(2, '0');
-      document.getElementById('recordTimer').textContent = `${h}:${m}:${s}`;
-    }, 1000);
-  } catch (err) {
-    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') showMicModal('denied');
-    else showMicModal('unsupported');
-  } finally {
-    micRequesting = false;
-  }
-}
-
-// 发送一个音频片段到服务端转录（后台进行，不阻塞录音）
-async function sendLiveChunk(blobs, index) {
-  if (!liveSessionId) return;
-  const blob = new Blob(blobs, { type: liveMimeType });
-  const ext = liveMimeType.includes('webm') ? 'webm' : 'm4a';
-  const formData = new FormData();
-  formData.append('chunk', blob, `chunk_${index}.${ext}`);
-
-  try {
-    const res = await fetch(`/api/live/chunk/${liveSessionId}?index=${index}`, {
-      method: 'POST', body: formData
-    });
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        try {
-          const ev = JSON.parse(line.slice(6));
-          if (ev.type === 'chunk_done') {
-            liveChunksDone++;
-            liveTotalChars = ev.totalChars || liveTotalChars;
-            updateLiveStatus();
-          }
-        } catch (e) {}
-      }
-    }
-  } catch (e) {
-    console.error(`[live] chunk ${index} 发送失败:`, e);
-  }
-}
-
-function updateLiveStatus() {
-  const el = document.getElementById('liveStatus');
-  if (el) {
-    document.getElementById('liveChunkCount').textContent = liveChunksDone;
-    document.getElementById('liveCharCount').textContent = liveTotalChars;
-  }
-}
-
-// 结束录音：发送最后一段 + 触发纪要生成
-async function finishLiveSession(lastBlobs, lastIndex, userContext) {
-  userContext = userContext || { topic: '', participants: '', notes: '' };
-  // 进度页已由 enterLiveFinishing 切好；用户这会儿要是点去看别的记录了，就只在后台更新，不把人拽回来。
-  // currentTranscript 这些「正在显示的结果」也不碰（它们是「复制纯文本」的数据源）
-  document.getElementById('progressFile').textContent = `实时录音（已转录 ${liveTotalChars} 字）`;
-  progressSteps.innerHTML = '';
-  progressBar.style.width = '60%'; // 转录已基本完成
-  progressBar.classList.remove('done');
-  steps.length = 0;
-
-  const transcribeIdx = addStep(`${liveChunksDone} 段已转录（${liveTotalChars} 字）`, 'done');
-  const lastChunkIdx = lastBlobs.length > 0 ? addStep('正在转录最后一段...', 'active') : -1;
-  startCrawl(60, 95);
-  startWittyMessages();
-
-  const formData = new FormData();
-  if (lastBlobs.length > 0) {
-    const blob = new Blob(lastBlobs, { type: liveMimeType });
-    const ext = liveMimeType.includes('webm') ? 'webm' : 'm4a';
-    formData.append('chunk', blob, `chunk_${lastIndex}.${ext}`);
-  }
-  if (userContext.topic) formData.append('topic', userContext.topic);
-  if (userContext.participants) formData.append('participants', userContext.participants);
-  if (userContext.notes) formData.append('notes', userContext.notes);
-
-  let completed = false;
-  let failure = '';
-  try {
-    const response = await fetch(
-      `/api/live/finish/${liveSessionId}?index=${lastIndex}`,
-      { method: 'POST', body: formData }
-    );
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({ error: '处理失败' }));
-      throw new Error(err.error || `服务器错误 (${response.status})`);
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let speakerIdx = -1;
-
-    function handleEvent(ev) {
-      if (ev.type === 'chunk_done') {
-        if (lastChunkIdx >= 0) updateStep(lastChunkIdx, '最后一段转录完成', 'done');
-      } else if (ev.type === 'chunk_error') {
-        if (lastChunkIdx >= 0) updateStep(lastChunkIdx, '最后一段转录失败', 'error');
-      } else if (ev.type === 'progress') {
-        switch (ev.step) {
-          case 'transcribe_done':
-            updateStep(transcribeIdx, `语音识别完成（${ev.message}）`, 'done');
-            break;
-          case 'speaker':
-            if (speakerIdx < 0) speakerIdx = addStep(ev.message, 'active');
-            else updateStep(speakerIdx, ev.message, 'active');
-            break;
-          case 'speaker_done':
-            if (speakerIdx >= 0) updateStep(speakerIdx, ev.message, 'done');
-            break;
-        }
-      } else if (ev.type === 'complete') {
-        completed = true;
-        stopCrawl(100);
-        progressBar.classList.add('done');
-        document.getElementById('walker').textContent = '✅';
-        stopWittyMessages('搞定！');
-        addStep('全部完成！', 'done');
-        revealResult(ev.id, '现场录音');
-        loadHistory();
-        // 只有成功完成才清备份，失败/中断时保留供刷新后恢复
-        clearBackupDB();
-      } else if (ev.type === 'error') {
-        stopCrawl(null);
-        stopWittyMessages();
-        addStep('错误: ' + ev.message, 'error');
-        failure = ev.message;
-      }
-    }
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        try { handleEvent(JSON.parse(line.slice(6))); } catch (e) {}
-      }
-    }
-    if (buffer.trim() && buffer.trim().startsWith('data: ')) {
-      try { handleEvent(JSON.parse(buffer.trim().slice(6))); } catch (e) {}
-    }
-  } catch (err) {
-    stopCrawl(null);
-    stopWittyMessages();
-    addStep('网络错误: ' + err.message, 'error');
-    failure = '网络错误: ' + err.message;
-  }
-
-  liveSessionId = null;
-  liveFinishing = false;
-  if (!completed) {
-    document.getElementById('backHomeBtn').hidden = false;
-    // 用户这会儿不在进度页（点去看别的了）：失败了也得让人知道。录音备份只在成功时清，刷新能找回
-    if (!progressArea.classList.contains('show')) {
-      showToast(`现场录音没转成：${failure || '连接断了，没收到结果'}。录音还存在浏览器里，刷新页面可以重新处理`);
-    }
-  }
-  // 注意：clearBackupDB 已移到 handleEvent 的 'complete' 分支，仅在成功时清
-  // 这里不清，保留备份给失败/中断后的恢复流程
-}
-
-// ────── 会前备忘 ──────
-// 会前备忘（主题 / 参会人 / 备注）原本只喂给 AI 纪要；公开版只出原文，直接开始处理
-function showMemoModal(callback) {
-  callback({ topic: '', participants: '', notes: '' });
-}
-
 // ────── 只出原文 ──────
 // 界面收起靠 body.transcript-only 的 CSS，这里只换掉提到纪要的文案
 let transcriptOnly = true;   // 公开版只出原文；/api/config 也固定返回 true
-
-function recordHintText() {
-  return transcriptOnly ? '录完自动出原文' : '录完自动生成纪要';
-}
 
 async function fetchConfig() {
   try {
@@ -1504,8 +991,6 @@ async function fetchConfig() {
   document.body.classList.add('transcript-only');
   document.getElementById('headerBadge').textContent = '本地转录 · 数据不出本机';
   document.getElementById('historyHint').textContent = '点击查看之前的转录';
-  document.getElementById('stopConfirmDesc').textContent = '停止后将开始转录录音';
-  document.getElementById('recordHint').textContent = recordHintText();
 }
 
 // ────── 纠错词表面板 ──────
@@ -1589,9 +1074,8 @@ const AUDIO_EXTS = ['.m4a', '.mp3', '.mp4', '.wav', '.aac', '.ogg', '.webm', '.c
 const MAX_UPLOAD_MB = 500;   // 和 server.js 的上传上限一致
 let batch = null;            // { items: [{ file, key, status, id, duration, charCount, error }], running }
 let batchGen = 0;            // 每开一批 +1：上一批延迟打开结果前核对一下，别把新一批的进度页换掉
-let liveFinishing = false;   // 停止录音后、转完之前：不接新文件、不开新录音
 let progressFileText = '';   // 进度页上当前文件的名字和大小；队列变了，前面的「第几个」跟着刷新
-// 来自录音的文件（录音没走成边录边转、或刷新后恢复的备份）：只有它们转成功了才清 IndexedDB 里的录音备份。
+// 从旧录音备份恢复出来的文件：只有它转成功了才清 IndexedDB 里的备份。
 // 普通上传不能清——恢复提示可能还没回答，被拖进来的文件一挡，备份就没了
 const backupFiles = new WeakSet();
 
@@ -1609,16 +1093,8 @@ function showToast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), Math.min(12000, 3000 + msg.length * 100));
 }
 
-function busyReason() {
-  if (mediaRecorder && mediaRecorder.state === 'recording') return '正在录音，停止录音后再拖文件进来';
-  if (liveFinishing) return '正在处理刚才的录音，处理完再拖文件进来';
-  return '';
-}
-
 // files 已经过滤好；note 是过滤时攒下的说明（比如「2 个不是支持的录音格式，跳过了」）
 function enqueueFiles(files, note = '') {
-  const busy = busyReason();
-  if (busy) { showToast(busy); return; }
   const running = !!(batch && batch.running);
   const queued = new Set(running
     ? batch.items.filter(it => it.status === 'waiting' || it.status === 'active').map(it => it.key)
@@ -1828,13 +1304,6 @@ function openTranscript(id) {
   loadTranscript(id, el || null);
 }
 
-// 录音没走成边录边转（session 没建上 / 一段都没切出来）：整段当一个文件排进队列
-function transcribeRecording(file) {
-  liveFinishing = false;
-  backupFiles.add(file);
-  enqueueFiles([file]);
-}
-
 // ────── 拖放 / 选文件 ──────
 // 拖进来的东西先记下来：webkitGetAsEntry 只能在 drop 事件里同步取，await 之后 DataTransfer 就清空了
 function snapshotDrop(dt) {
@@ -1919,12 +1388,10 @@ const isFileDrag = e => !!e.dataTransfer && [...e.dataTransfer.types].includes('
 
 // 在首页：拖放区自己亮起来；在别的页面（看结果、转录中）：整窗遮罩
 function setDragging(on) {
-  const busy = busyReason();
-  const onLanding = !busy && uploadSection.style.display !== 'none';
-  const hint = busy || (batch && batch.running ? '松开鼠标，排到队列后面' : '松开鼠标，开始转录');
+  const onLanding = uploadSection.style.display !== 'none';
+  const hint = batch && batch.running ? '松开鼠标，排到队列后面' : '松开鼠标，开始转录';
   document.body.classList.toggle('is-dragging', on && onLanding);
   dragOverlay.classList.toggle('show', on && !onLanding);
-  dragOverlay.classList.toggle('is-blocked', !!busy);
   dragOverlay.textContent = hint;
   document.getElementById('dropRelease').textContent = hint;
 }
@@ -2298,28 +1765,10 @@ function showCopied(btn, originalLabel) {
 }
 
 function resetUI() {
-  // 录音中、录音收尾中、队列在转时，只切回首页（录音时首页就是录音面板），这些任务的状态一概不动。
-  // 以前这里会直接停掉正在录的音，不转也不提示，录音就丢了
-  const recording = mediaRecorder && mediaRecorder.state === 'recording';
-  if (!recording && !liveFinishing && !(batch && batch.running)) {
+  // 队列在后台转的时候只切回首页：进度页的状态留着，侧栏还能点回去
+  if (!(batch && batch.running)) {
     resetProgressView();
     window.onbeforeunload = null;
-    document.body.style.overscrollBehavior = '';
-    document.documentElement.style.overscrollBehavior = '';
-    clearInterval(recordTimerInterval);
-    document.getElementById('recordTimer').style.display = 'none';
-    document.getElementById('recordTimer').textContent = '00:00:00';
-    document.getElementById('recordHint').textContent = recordHintText();
-    document.getElementById('recordBtn').classList.remove('recording');
-    document.querySelector('.landing').classList.remove('is-recording');
-    document.getElementById('recordLabel').textContent = '开始录音';
-    document.getElementById('liveStatus').style.display = 'none';
-    // 清理边录边转状态
-    liveSessionId = null;
-    chunkIndex = 0;
-    chunkBuffer = [];
-    liveChunksDone = 0;
-    liveTotalChars = 0;
   }
   uploadSection.style.display = '';
   progressArea.classList.remove('show');
@@ -2459,16 +1908,11 @@ if (isIOS) {
   document.getElementById('voiceMemoGuide').style.display = '';
 }
 
-// 页面加载时检查是否有被刷新中断的录音备份
+// 启动时检查旧版网页录音有没有留下被中断的备份（录音功能已去掉，这个恢复入口留着救数据）
 (async function checkBackup() {
   const backup = await loadBackupFromDB();
-  if (!backup || !backup.blob || backup.blob.size < 1000) {
-    clearBackupDB();
-    return;
-  }
-  // 超过 24 小时的备份自动丢弃
-  if (Date.now() - backup.ts > 24 * 60 * 60 * 1000) {
-    clearBackupDB();
+  if (!backup || !backup.blob || backup.blob.size < 1000 || Date.now() - backup.ts > 24 * 60 * 60 * 1000) {
+    if (backup) clearBackupDB();
     return;
   }
   const ext = backup.mimeType.includes('webm') ? 'webm' : 'm4a';
@@ -2476,35 +1920,18 @@ if (isIOS) {
   const ago = Math.round((Date.now() - backup.ts) / 1000);
   const agoText = ago < 60 ? `${ago}秒前` : `${Math.round(ago/60)}分钟前`;
 
-  // 复用已有的 modal 组件弹出恢复提示
-  const modal = document.getElementById('micModal');
-  const title = document.getElementById('micModalTitle');
-  const desc = document.getElementById('micModalDesc');
-  const btn = document.getElementById('micModalBtn');
-  title.textContent = '发现未完成的录音';
-  desc.textContent = `${agoText}有一段录音被意外中断（${sizeMB} MB），是否继续处理？`;
-  btn.textContent = '恢复并处理';
-  // 先设置 secondBtn 状态（用闭包变量供两个分支共用还原逻辑）
-  const secondBtn = modal.querySelector('.modal-btn.secondary');
-  const origOnclick = secondBtn.onclick;
-  secondBtn.textContent = '丢弃录音';
-  const restoreSecondBtn = () => {
-    secondBtn.textContent = '改用上传文件';
-    secondBtn.onclick = origOnclick;
-  };
-  btn.onclick = () => {
-    // 主按钮"恢复并处理"也要还原 secondBtn，否则下次打开麦克风权限弹窗副按钮还是"丢弃录音"
-    restoreSecondBtn();
-    closeMicModal();
+  const modal = document.getElementById('backupModal');
+  document.getElementById('backupDesc').textContent = `${agoText}有一段录音被意外中断（${sizeMB} MB），是否继续处理？`;
+  document.getElementById('backupBtn').onclick = () => {
+    modal.classList.remove('show');
     const file = new File([backup.blob], `会议录音_${new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' })}.${ext}`, { type: backup.mimeType });
     // 不在这里清备份：转成功了队列才清（失败可重试）
     backupFiles.add(file);
     enqueueFiles([file]);
   };
-  secondBtn.onclick = () => {
+  document.getElementById('backupDiscardBtn').onclick = () => {
     clearBackupDB();
-    closeMicModal();
-    restoreSecondBtn();
+    modal.classList.remove('show');
   };
   modal.classList.add('show');
 })();

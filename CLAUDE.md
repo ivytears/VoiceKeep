@@ -6,7 +6,7 @@
 
 - **后端**：单文件 `server.js`（Node.js + Express），运行时依赖只有 express / multer / opencc-js。**前端**：`public/index.html`，单文件原生 JS，没有构建步骤。
 - **端口**：HTTPS 3443 是主应用；HTTP 3000 是证书引导页（`public/setup.html`，提供本机 CA 下载）。两个都**只监听 127.0.0.1**：接口没有登录，对局域网开放就等于同一 Wi-Fi 的设备能列出、读取、删除转录记录。
-- **两条录入路径**（都是 SSE）：整段上传 `POST /api/transcribe`；边录边转 `POST /api/live/{start,chunk/:id,finish/:id}`，前端每 30 秒传一片。拖进来的文件（可以多个、可以整个文件夹）在前端排队，一个转完再传下一个；转录队列和边录边转共用一个进度页，同一时间只允许一件在跑。
+- **录入路径只有一条**（SSE）：整段上传 `POST /api/transcribe`。拖进来的文件（可以多个、可以整个文件夹）在前端排队，一个转完再传下一个。网页录音（边录边转）在 v1.3.0 去掉了：不稳定，而且那条路没有说话人标注；别加回来。
 - **音频**：FFmpeg 转成 16k 单声道 WAV；超过 10 分钟按 600 秒切片顺序识别；whisper 并发数为 1。
 - **语音识别**：whisper.cpp，模型 `large-v3-turbo-q8_0`（没有就退回 q5_0）+ Silero VAD + 束搜索 `-bs 5`，initial prompt 是一句中性的中文开场白（让输出带标点）。默认用 PATH 上的 whisper-cli（Homebrew，Metal）；环境变量 `WHISPER_CLI` 指向自编译的 CoreML 版可以用上 Apple 神经引擎（整体快约 2.4 倍）。
 - **文本处理**（`tools/`）：`textclean.js` 用黑名单删字幕幻觉、删连续复读，并给说话人视图做保守的语气词顺滑（纯文字视图保持逐字原文）；`corrections.js` 是纠错词表（数据目录里的 `纠错词表.txt`，没有就写入默认表，每次转录现读；网页右上角的面板经 `GET/PUT /api/corrections` 直接读写这个文件）；繁转简用 opencc-js。
@@ -23,7 +23,7 @@
   ROOT_CA_PEM="$(mkcert -CAROOT)/rootCA.pem" ./start.sh
   ```
 - **单元测试**：`node tools/speakers.test.js`、`node tools/corrections.test.js`。
-- **服务流程测试**：`./tests/server-test.sh`。whisper 和说话人分离换成桩，验证只听本机、没有云端接口、两条路径落盘、纠错词表现改现生效、说话人标注不丢字、整段幻觉不落盘。
+- **服务流程测试**：`./tests/server-test.sh`。whisper 和说话人分离换成桩，验证只听本机、没有云端 / 边录边转接口、上传落盘、纠错词表现改现生效、说话人标注不丢字、整段幻觉不落盘。
 - **打包测试**：`./packaging/build.sh` 最后自动跑 `launcher-test.sh`（把 security / osascript 换成桩，测首次启动和证书流程）和 `smoke-test.sh`（用 `sandbox-exec` 拒读 Homebrew 目录，验证安装包真的自包含）。
 
 ## 必须守住的
@@ -41,7 +41,7 @@
 - **拖文件夹**：drop 事件一返回 `DataTransfer` 就清空了，`webkitGetAsEntry()` 必须在事件里同步取完；展开目录再异步做，`readEntries` 一次最多给 100 个，要一直读到空。
 - **后台转录不能动「正在显示的结果」**：`currentTranscript` 这些全局变量是「复制纯文本」的数据源。队列在后台转的时候只更新进度页，转完用 `/api/transcript/:id` 重新加载结果；否则用户在看 A 的时候会复制到 B 的文字。
 - **转录 ID 要允许中文**：只拒绝 `/`、`\`、`..`（防路径穿越）。
-- **iOS Safari 拦不住刷新**：录音每秒备份到 IndexedDB，刷新后检测并恢复。
+- **旧版网页录音的 IndexedDB 备份**：录音功能已去掉，但升级的用户可能还留着被中断的录音备份，`checkBackup` 恢复入口保留，把它当普通文件排进转录队列。
 - **隔离标记**：浏览器 / AirDrop / 网盘来的文件带 `com.apple.quarantine`，内置二进制一执行就被 Gatekeeper 直接 SIGKILL（退出码 137，没有提示）。build.sh 打包前 `xattr -cr`；launcher 发现内置 node 带标记就整包清一次。
 - **FFmpeg 要 arm64 原生**：常见的预编译包只有 x86_64，目标机没装 Rosetta 就跑不起来，所以从官方源码编（`--disable-autodetect`，只依赖系统库）。
 - **最低系统版本**：Homebrew whisper-cpp 的 minos（当前 15.0）决定整个 .app 的最低系统版本，build.sh 自动写进 `Info.plist`，让 Finder 提示版本不够而不是莫名崩溃。

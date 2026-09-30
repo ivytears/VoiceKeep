@@ -5,7 +5,7 @@
 #
 # whisper-cli 和说话人分离都换成桩（记下收到的参数，吐固定文本 / 固定两个人），验证：
 # 只监听 127.0.0.1（接口没有登录，不能对局域网开放）；没有任何云端接口（纪要 / 花名册接口都不存在）；
-# 上传和边录边转两条路都落盘、过纠错词表（现改词表不用重启）；本机分离标出「说话人一 / 二」且不丢字；
+# 上传转录落盘、过纠错词表（现改词表不用重启）；本机分离标出「说话人一 / 二」且不丢字；
 # 整段只有音乐 / 静音（whisper 全吐字幕幻觉）时报「没有识别到说话内容」、不把幻觉存下来。
 # 用临时端口 + 临时数据目录，不碰正在跑的留声。
 
@@ -153,11 +153,11 @@ SAVE="$(api -X PUT -H 'Content-Type: application/json' \
 ok "词表面板接口：GET 读回、PUT 原子保存、坏行报行号、非法请求 400"
 
 ID="$(basename "$REC" .json)"
-for probe in "POST /api/transcript/$ID/regenerate" "PUT /api/transcript/$ID/minutes" "GET /api/team"; do
+for probe in "POST /api/transcript/$ID/regenerate" "PUT /api/transcript/$ID/minutes" "GET /api/team" "POST /api/live/start" "POST /api/live/finish/x"; do
   code="$(http_code -X "${probe%% *}" -H 'Content-Type: application/json' -d '{}' "$BASE${probe#* }")"
   [[ "$code" == "404" ]] || die "$probe 应该不存在（公开版没有云端纪要和花名册），实际 HTTP $code"
 done
-ok "没有任何云端 / 纪要 / 花名册接口（都返回 404）"
+ok "没有任何云端 / 纪要 / 花名册 / 边录边转接口（都返回 404）"
 
 SPK="$(json_get speakerTranscript <"$REC")"
 [[ "$SPK" == *"说话人一"* && "$SPK" == *"说话人二"* ]] || die "应标出「说话人一 / 说话人二」，实际: $SPK"
@@ -169,14 +169,6 @@ ok "本机说话人分离：标出说话人一 / 二，去掉标签后与原文�
 
 [[ -n "$(whisper_prompt)" ]] || die "whisper 没收到 --prompt（中文标点靠它带）"
 ok "whisper 收到了提示词：$(whisper_prompt)"
-
-SESSION="$(api -X POST "$BASE/api/live/start" | json_get sessionId)"
-[[ -n "$SESSION" ]] || die "live/start 没返回 sessionId"
-api -N --max-time 120 -F "chunk=@$WORK/sample.wav" "$BASE/api/live/finish/$SESSION?index=0" >"$WORK/sse-live.txt" || true
-grep -q '"type":"complete"' "$WORK/sse-live.txt" || die "边录边转没有 complete: $(tail -2 "$WORK/sse-live.txt")"
-LIVE_TX="$(json_get transcript <"$(saved_record)")"
-[[ "$LIVE_TX" == *"用Claude Code把"* && "$LIVE_TX" != *"Cloud Code"* ]] || die "边录边转的原文没过纠错词表: $LIVE_TX"
-ok "边录边转：落盘，原文也过了纠错词表"
 
 touch "$WORK/stub-hallu"
 api -N --max-time 120 -F "audio=@$WORK/sample.wav" "$BASE/api/transcribe" >"$WORK/sse-hallu.txt" || true

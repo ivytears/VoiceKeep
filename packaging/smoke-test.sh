@@ -11,10 +11,10 @@
 #  1) 每个内置二进制能启动（whisper-cli 启动即加载 ggml plugin）；包里没有 .env（AI 网关密钥）
 #  2) 内置 ffmpeg 能解前端允许上传的全部格式
 #  3) 内置 whisper 能转录中文并走 Metal
-#  4) 从 .app 起完整 server（只出原文、只听本机；临时端口 + 临时数据目录），走一遍「上传转录」和
-#     「边录边转」两条路，核对转录记录已落盘、不出纪要；只听本机；纠错词表写好了、现改现生效；
+#  4) 从 .app 起完整 server（只出原文、只听本机；临时端口 + 临时数据目录），走一遍「上传转录」，
+#     核对转录记录已落盘、不出纪要；只听本机；纠错词表写好了、现改现生效；
 #     设置页的 /rootCA.pem、/ca-name 给的是运行时生成的 CA
-#  5) 历史记录 / 详情 / 删除，纪要和花名册接口不存在（404），以及路径穿越拦截
+#  5) 历史记录 / 详情 / 删除，纪要 / 花名册 / 边录边转接口不存在（404），以及路径穿越拦截
 
 set -euo pipefail
 
@@ -197,26 +197,19 @@ UP_TX="$(json_get transcript <"$(ls -t "$WORK"/data/transcripts/*.json | head -1
 [[ "$UP_TX" == *"各位好"* && "$UP_TX" != *"大家好"* ]] || die "纠错词表没生效（现加的「大家好 => 各位好」）: $UP_TX"
 ok "纠错词表生效：现加的「大家好 => 各位好」不重启就用上了"
 
-# —— 路径 B：边录边转 /api/live/{start,chunk,finish}（MediaRecorder 产出 webm/opus，这里也用它）——
-"$HOST_FFMPEG" -v error -y -i "$WORK/src.aiff" -t 7    -c:a libopus -b:a 32k -f webm "$WORK/chunk0.webm"
-"$HOST_FFMPEG" -v error -y -i "$WORK/src.aiff" -ss 7   -c:a libopus -b:a 32k -f webm "$WORK/chunk1.webm"
-SESSION="$(curl -sk -X POST "$BASE/api/live/start" | json_get sessionId)"
-[[ -n "$SESSION" ]] || die "live/start 没返回 sessionId"
-curl -sk -N --max-time 300 -F "chunk=@$WORK/chunk0.webm" "$BASE/api/live/chunk/$SESSION?index=0" >"$WORK/sse-chunk0.txt" || true
-grep -q '"type":"chunk_done"' "$WORK/sse-chunk0.txt" || { cat "$WORK/sse-chunk0.txt" >&2; die "live/chunk 0 没有 chunk_done"; }
-ok "边录边转：chunk 0 转录完成"
-curl -sk -N --max-time 900 -F "chunk=@$WORK/chunk1.webm" "$BASE/api/live/finish/$SESSION?index=1" >"$WORK/sse-finish.txt" || true
-check_sse "$WORK/sse-finish.txt" "边录边转"
+# —— 边录边转已在 v1.3.0 去掉：接口必须不存在 ——
+[[ "$(curl -sk -o /dev/null -w '%{http_code}' -X POST "$BASE/api/live/start")" == "404" ]] || die "/api/live/start 应已下线（404）"
+ok "边录边转接口已下线（404）"
 
 # ---------- 5. 历史记录 / 详情 / 编辑 / 重新生成 / 删除 ----------
 log "5/5 历史记录与记录管理接口"
 IDS="$(ls "$WORK"/data/transcripts/*.json | xargs -n1 basename | sed 's/\.json$//')"
-[[ "$(echo "$IDS" | wc -l | tr -d ' ')" -eq 2 ]] || die "应有 2 条落盘记录，实际: $IDS"
+[[ "$(echo "$IDS" | wc -l | tr -d ' ')" -eq 1 ]] || die "应有 1 条落盘记录，实际: $IDS"
 HISTORY="$(curl -sk "$BASE/api/history")"
 for id in $IDS; do
   [[ "$HISTORY" == *"\"id\":\"$id\""* ]] || die "/api/history 里没有 $id"
 done
-ok "/api/history 列出 2 条记录"
+ok "/api/history 列出 1 条记录"
 
 ID="$(echo "$IDS" | head -1)"
 [[ "$(curl -sk "$BASE/api/transcript/$ID" | json_get id)" == "$ID" ]] || die "读不到记录详情 $ID"
